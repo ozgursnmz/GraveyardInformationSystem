@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Graveyard.API.Data;
 using Graveyard.API.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,7 @@ public class FuneralServicesController : ControllerBase
     }
 
     // POST: api/FuneralServices
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<ActionResult<FuneralService>> Create(FuneralService item)
     {
@@ -36,6 +38,7 @@ public class FuneralServicesController : ControllerBase
     }
 
     // PUT: api/FuneralServices/{id}
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, FuneralService item)
     {
@@ -51,6 +54,7 @@ public class FuneralServicesController : ControllerBase
     }
 
     // DELETE: api/FuneralServices/{id}
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {

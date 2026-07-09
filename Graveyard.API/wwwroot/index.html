@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mezarlık Yönetimi - Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>tailwind.config={darkMode:"class",theme:{extend:{colors:{"primary-fixed":"#c8e8d0","primary-fixed-dim":"#8ecf9e","on-primary-fixed":"#002110","primary-container":"#78a886","on-primary-container":"#d8f0de","primary":"#4a7c59","on-primary":"#ffffff","secondary":"#6b6358","secondary-container":"#f0e8db","on-surface-variant":"#4a4e4a","outline":"#74796e","outline-variant":"#c4c8bc","on-surface":"#2e3230","surface-container-lowest":"#ffffff","surface-container-low":"#f5f1ea","surface-container":"#f0ece4","surface-container-high":"#eae6de","surface-container-highest":"#e4e0d8","surface-bright":"#faf6f0","surface-dim":"#dbd7cf","surface-variant":"#e4e0d8","background":"#faf6f0","surface":"#faf6f0","tertiary":"#705c30","tertiary-fixed":"#f8e0a8","error":"#b83230","error-container":"#ffdad8","on-error-container":"#690005"}}}};</script>
+<style>
+  body{font-family:'Inter',sans-serif}
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400}
+</style>
+</head>
+<body class="bg-surface text-on-surface flex min-h-screen">
+
+<!-- Sidebar -->
+<aside class="w-[280px] h-screen fixed left-0 top-0 bg-surface-container border-r border-outline-variant flex flex-col gap-4 p-6 z-50">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center">
+      <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;">account_balance</span>
+    </div>
+    <div>
+      <h1 class="text-lg font-bold text-primary" data-i18n="app_title">Mezarlık Sistemi</h1>
+      <p class="text-xs text-secondary" data-i18n="app_subtitle">Belediye Yönetim Paneli</p>
+    </div>
+  </div>
+  <nav class="flex-1 flex flex-col gap-2">
+    <a href="#" data-entity="gravePlots" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm hover:bg-surface-container-high transition-all">
+      <span class="material-symbols-outlined">grid_view</span> <span data-i18n="nav_gravePlots">Mezar Kayıtları</span></a>
+    <a href="#" data-entity="burialRecords" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-secondary hover:bg-surface-container-high transition-all">
+      <span class="material-symbols-outlined">person_off</span> <span data-i18n="nav_burialRecords">Vefat Edenler</span></a>
+    <a href="#" data-entity="graveOwners" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-secondary hover:bg-surface-container-high transition-all">
+      <span class="material-symbols-outlined">assignment_ind</span> <span data-i18n="nav_graveOwners">Sahiplik Durumları</span></a>
+    <a href="#" data-entity="cemeteryZones" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-secondary hover:bg-surface-container-high transition-all">
+      <span class="material-symbols-outlined">map</span> <span data-i18n="nav_cemeteryZones">Bölgeler</span></a>
+    <a href="#" data-entity="payments" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-secondary hover:bg-surface-container-high transition-all">
+      <span class="material-symbols-outlined">payments</span> <span data-i18n="nav_payments">Ödemeler</span></a>
+    <a href="#" data-entity="maintenanceLogs" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-secondary hover:bg-surface-container-high transition-all">
+      <span class="material-symbols-outlined">construction</span> <span data-i18n="nav_maintenanceLogs">Bakım Kayıtları</span></a>
+  </nav>
+  <button id="btnLogout" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-secondary hover:bg-error-container hover:text-on-error-container transition-all">
+    <span class="material-symbols-outlined">logout</span> <span data-i18n="logout">Çıkış Yap</span></button>
+</aside>
+
+<!-- Main -->
+<div class="flex-1 ml-[280px] flex flex-col min-h-screen">
+  <header class="h-16 sticky top-0 z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-6">
+    <div class="relative w-72">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+      <input id="searchInput" type="text" data-i18n-ph="search_ph" placeholder="Ara..." class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-primary"/>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="relative">
+        <button id="langBtn" onclick="toggleLangMenu()" class="flex items-center gap-1 px-3 py-2 border border-outline-variant rounded-full text-xs font-semibold hover:bg-surface-container-low transition-colors">
+          <span class="material-symbols-outlined text-[16px]">translate</span><span id="langCurrent">Türkçe</span>
+          <span class="material-symbols-outlined text-[16px]">expand_more</span>
+        </button>
+        <div id="langMenu" class="hidden absolute right-0 mt-1 w-36 bg-surface-container-lowest border border-outline-variant rounded-lg shadow-lg overflow-hidden z-50">
+          <button data-lang-opt="tr" onclick="chooseLang('tr')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-container-low flex items-center gap-2"><img src="https://flagcdn.com/w40/tr.png" alt="TR" class="w-5 h-5 rounded-full object-cover"/>Türkçe</button>
+          <button data-lang-opt="en" onclick="chooseLang('en')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-container-low flex items-center gap-2"><img src="https://flagcdn.com/w40/gb.png" alt="EN" class="w-5 h-5 rounded-full object-cover"/>English</button>
+        </div>
+      </div>
+      <div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold">
+        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings:'FILL' 1;">person</span>
+      </div>
+      <span id="username" class="text-sm font-semibold">admin</span>
+    </div>
+  </header>
+
+  <main class="flex-1 p-6 bg-background overflow-y-auto">
+    <div class="max-w-[1440px] mx-auto space-y-8">
+      <div class="flex justify-between items-center">
+        <h2 class="text-3xl font-bold" data-i18n="overview">Genel Bakış</h2>
+        <button id="btnAdd" class="bg-primary text-on-primary hover:opacity-90 transition-opacity px-6 py-3 rounded-full text-sm font-semibold flex items-center gap-2 shadow-sm">
+          <span class="material-symbols-outlined text-sm">add</span> <span data-i18n="add_new">Yeni Kayıt Ekle</span></button>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-2">
+          <div class="flex justify-between items-start">
+            <span class="text-xs font-semibold text-secondary" data-i18n="stat_total_plots">Toplam Mezar Sayısı</span>
+            <span class="material-symbols-outlined text-primary bg-primary-fixed p-2 rounded-lg">grid_view</span>
+          </div>
+          <div id="statTotalPlots" class="text-3xl font-bold mt-2">—</div>
+        </div>
+        <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-2">
+          <div class="flex justify-between items-start">
+            <span class="text-xs font-semibold text-secondary" data-i18n="stat_occupancy">Doluluk Oranı</span>
+            <span class="material-symbols-outlined text-tertiary bg-tertiary-fixed p-2 rounded-lg">pie_chart</span>
+          </div>
+          <div id="statOccupancy" class="text-3xl font-bold mt-2">—</div>
+          <div class="w-full bg-surface-container-high rounded-full h-2 mt-2 overflow-hidden">
+            <div id="statOccupancyBar" class="bg-primary h-2 rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-2">
+          <div class="flex justify-between items-start">
+            <span class="text-xs font-semibold text-secondary" data-i18n="stat_deceased">Toplam Vefat Eden</span>
+            <span class="material-symbols-outlined text-error bg-error-container p-2 rounded-lg">person_off</span>
+          </div>
+          <div id="statDeceased" class="text-3xl font-bold mt-2">—</div>
+        </div>
+        <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-2">
+          <div class="flex justify-between items-start">
+            <span class="text-xs font-semibold text-secondary" data-i18n="stat_revenue">Toplam Gelir</span>
+            <span class="material-symbols-outlined text-primary bg-primary-fixed-dim p-2 rounded-lg">payments</span>
+          </div>
+          <div id="statRevenue" class="text-3xl font-bold mt-2">—</div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+        <div class="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-bright">
+          <h3 id="tableTitle" class="text-lg font-semibold">Kayıtlar</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr id="tableHead" class="bg-surface-container-low text-secondary text-xs uppercase tracking-wide border-b border-outline-variant"></tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-outline-variant"></tbody>
+          </table>
+        </div>
+        <div class="p-4 border-t border-outline-variant bg-surface-container flex justify-between items-center text-sm text-secondary">
+          <span id="pageInfo">—</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+  <div class="bg-surface-container-lowest w-full max-w-2xl rounded-2xl border border-outline-variant shadow-2xl flex flex-col max-h-[90vh]">
+    <div class="px-8 py-6 border-b border-outline-variant flex justify-between items-center bg-surface-bright rounded-t-2xl">
+      <h2 id="modalTitle" class="text-xl font-semibold">Yeni Kayıt Ekle</h2>
+      <button id="btnClose" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container text-on-surface-variant">
+        <span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="px-8 py-6 overflow-y-auto flex-1">
+      <div id="modalError" class="hidden bg-error-container text-on-error-container text-sm rounded-lg px-4 py-3 mb-4"></div>
+      <form id="modalForm" onsubmit="return false;">
+        <div id="formFields" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+      </form>
+    </div>
+    <div class="px-8 py-5 border-t border-outline-variant bg-surface rounded-b-2xl flex justify-end gap-4">
+      <button id="btnCancel" type="button" class="px-6 py-2.5 bg-surface-container-low text-secondary text-sm font-semibold rounded-full hover:bg-surface-container-high transition-colors" data-i18n="cancel">İptal</button>
+      <button id="btnSave" type="button" class="px-8 py-2.5 bg-primary text-on-primary text-sm font-semibold rounded-full hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm">
+        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1;">save</span> <span data-i18n="save">Kaydet</span></button>
+    </div>
+  </div>
+</div>
+
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
