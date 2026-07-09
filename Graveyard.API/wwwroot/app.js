@@ -12,6 +12,21 @@ function logout() {
   location.href = 'login.html';
 }
 
+// --- Tema (acik/koyu) ---
+function applyTheme() {
+  const dark = localStorage.getItem('theme') === 'dark';
+  document.documentElement.classList.toggle('dark', dark);
+  const icon = document.getElementById('themeIcon');
+  if (icon) icon.textContent = dark ? 'light_mode' : 'dark_mode';
+}
+
+function toggleTheme() {
+  const dark = localStorage.getItem('theme') === 'dark';
+  localStorage.setItem('theme', dark ? 'light' : 'dark');
+  applyTheme();
+  if (currentView === 'home') loadCharts(); // grafik renkleri guncellensin
+}
+
 // Iki dilli etiket secici (Leaflet'in global L'siyle cakismasin diye 'lbl')
 const lbl = (o) => (o && (o[LANG] || o.tr)) || '';
 
@@ -88,6 +103,7 @@ const ENTITIES = {
   },
   payments: {
     label: 'nav_payments', endpoint: 'Payments', key: ['receiptNo'],
+    rowAction: { icon: 'receipt_long', fn: 'downloadReceipt' },
     columns: [
       { field: 'receiptNo', label: { tr: 'Makbuz No', en: 'Receipt No' } },
       { field: 'amount', label: { tr: 'Tutar', en: 'Amount' } },
@@ -169,12 +185,18 @@ function drawChart(canvasId, type, data) {
   const ctx = document.getElementById(canvasId);
   if (!ctx || typeof Chart === 'undefined') return;
   if (charts[canvasId]) charts[canvasId].destroy();
+  const dark = document.documentElement.classList.contains('dark');
+  const txt = dark ? '#c4c8bc' : '#4a4e4a';
+  const grid = dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.08)';
   charts[canvasId] = new Chart(ctx, {
     type, data,
     options: {
       responsive: true,
-      plugins: { legend: { display: type === 'doughnut', position: 'bottom' } },
-      scales: type === 'doughnut' ? {} : { y: { beginAtZero: true, ticks: { precision: 0 } } },
+      plugins: { legend: { display: type === 'doughnut', position: 'bottom', labels: { color: txt } } },
+      scales: type === 'doughnut' ? {} : {
+        y: { beginAtZero: true, ticks: { precision: 0, color: txt }, grid: { color: grid } },
+        x: { ticks: { color: txt }, grid: { color: grid } },
+      },
     },
   });
 }
@@ -184,7 +206,10 @@ async function loadCharts() {
   try {
     const res = await fetch('/api/Stats/charts?months=' + currentMonths);
     const d = await res.json();
-    const green = '#4a7c59', greenDim = '#8ecf9e', slate = '#6b6358', gold = '#705c30', mid = '#c4a66a';
+    const dark = document.documentElement.classList.contains('dark');
+    const green = dark ? '#6bfb9a' : '#4a7c59';
+    const greenDim = dark ? '#4de082' : '#8ecf9e';
+    const slate = '#8aa0c0', gold = dark ? '#dcc48e' : '#705c30', mid = '#c4a66a';
     const loc = LANG === 'tr' ? 'tr-TR' : 'en-US';
 
     drawChart('chartZone', 'bar', {
@@ -436,11 +461,16 @@ function renderRows() {
       return `<td class="py-4 px-6">${fmt(val)}</td>`;
     }).join('');
 
+    const kp = JSON.stringify(keyPath(cfg, item));
+    const extra = cfg.rowAction
+      ? `<button onclick='${cfg.rowAction.fn}(${kp})' class="p-2 text-secondary hover:text-primary rounded-full hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">${cfg.rowAction.icon}</span></button>`
+      : '';
     const actions = cfg.readOnly ? '' : `
       <td class="py-4 px-6 text-right">
         <div class="flex justify-end gap-2">
-          <button onclick='openEdit(${JSON.stringify(keyPath(cfg, item))})' class="p-2 text-secondary hover:text-primary rounded-full hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">edit</span></button>
-          <button onclick='deleteRow(${JSON.stringify(keyPath(cfg, item))})' class="p-2 text-secondary hover:text-error rounded-full hover:bg-error-container"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+          ${extra}
+          <button onclick='openEdit(${kp})' class="p-2 text-secondary hover:text-primary rounded-full hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">edit</span></button>
+          <button onclick='deleteRow(${kp})' class="p-2 text-secondary hover:text-error rounded-full hover:bg-error-container"><span class="material-symbols-outlined text-[20px]">delete</span></button>
         </div>
       </td>`;
 
@@ -542,6 +572,76 @@ async function deleteRow(id) {
   } catch (e) { alert(t('err_generic')); }
 }
 
+// Aktif tabloyu (arama filtresi uygulanmis) Excel'e aktar
+function exportExcel() {
+  const cfg = ENTITIES[currentKey];
+  if (typeof XLSX === 'undefined') return;
+
+  const q = el('searchInput').value.trim().toLowerCase();
+  let data = currentData;
+  if (q) data = data.filter((item) =>
+    cfg.columns.some((c) => (item[c.field] ?? '').toString().toLowerCase().includes(q)));
+
+  const rows = data.map((item) => {
+    const o = {};
+    cfg.columns.forEach((c) => { o[lbl(c.label)] = item[c.field] ?? ''; });
+    return o;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, t(cfg.label).slice(0, 31));
+  XLSX.writeFile(wb, cfg.endpoint + '.xlsx');
+}
+
+// jsPDF standart fontu Turkce ozel karakterleri desteklemez -> ASCII'ye cevir
+function pdfSafe(s) {
+  return (s == null ? '' : String(s))
+    .replace(/ş/g, 's').replace(/Ş/g, 'S').replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+    .replace(/ı/g, 'i').replace(/İ/g, 'I').replace(/ç/g, 'c').replace(/Ç/g, 'C')
+    .replace(/ö/g, 'o').replace(/Ö/g, 'O').replace(/ü/g, 'u').replace(/Ü/g, 'U');
+}
+
+// Odeme makbuzu PDF olustur
+function downloadReceipt(id) {
+  const p = currentData.find((x) => x.receiptNo === id);
+  if (!p || !window.jspdf) return;
+  const tr = LANG === 'tr';
+  const doc = new window.jspdf.jsPDF();
+
+  doc.setFontSize(16);
+  doc.text(pdfSafe(tr ? 'Mezarlik Yonetim Sistemi' : 'Cemetery Management System'), 20, 22);
+  doc.setFontSize(12);
+  doc.text(pdfSafe(tr ? 'Odeme Makbuzu' : 'Payment Receipt'), 20, 32);
+  doc.setLineWidth(0.3);
+  doc.line(20, 36, 190, 36);
+
+  const rows = [
+    [tr ? 'Makbuz No' : 'Receipt No', p.receiptNo],
+    [tr ? 'Tutar' : 'Amount', (p.amount ?? '') + ' ' + (p.currency || '')],
+    [tr ? 'Tarih' : 'Date', p.paymentDate || ''],
+    [tr ? 'Odeme Yontemi' : 'Method', p.paymentMethod || ''],
+    [tr ? 'Sahip SSN' : 'Owner SSN', p.ownerSsn || ''],
+    [tr ? 'Fatura Adresi' : 'Billing Address', p.billingAddress || ''],
+  ];
+
+  let y = 50;
+  doc.setFontSize(11);
+  rows.forEach(([k, v]) => {
+    doc.setFont(undefined, 'bold');
+    doc.text(pdfSafe(k) + ':', 20, y);
+    doc.setFont(undefined, 'normal');
+    doc.text(pdfSafe(v), 75, y);
+    y += 11;
+  });
+
+  doc.setFontSize(9);
+  doc.text(pdfSafe((tr ? 'Olusturulma: ' : 'Generated: ') +
+    new Date().toLocaleString(tr ? 'tr-TR' : 'en-US')), 20, y + 12);
+
+  doc.save('makbuz_' + p.receiptNo + '.pdf');
+}
+
 function showModalError(msg) {
   const box = el('modalError');
   box.textContent = msg;
@@ -567,6 +667,7 @@ window.onLangChange = () => {
 
 // --- Baslat ---
 document.addEventListener('DOMContentLoaded', () => {
+  applyTheme();
   applyI18n();
   el('username').textContent = localStorage.getItem('username') || 'admin';
   document.querySelectorAll('nav a[data-entity]').forEach((a) => {

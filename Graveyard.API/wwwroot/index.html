@@ -8,10 +8,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script>tailwind.config={darkMode:"class",theme:{extend:{colors:{"primary-fixed":"#c8e8d0","primary-fixed-dim":"#8ecf9e","on-primary-fixed":"#002110","primary-container":"#78a886","on-primary-container":"#d8f0de","primary":"#4a7c59","on-primary":"#ffffff","secondary":"#6b6358","secondary-container":"#f0e8db","on-surface-variant":"#4a4e4a","outline":"#74796e","outline-variant":"#c4c8bc","on-surface":"#2e3230","surface-container-lowest":"#ffffff","surface-container-low":"#f5f1ea","surface-container":"#f0ece4","surface-container-high":"#eae6de","surface-container-highest":"#e4e0d8","surface-bright":"#faf6f0","surface-dim":"#dbd7cf","surface-variant":"#e4e0d8","background":"#faf6f0","surface":"#faf6f0","tertiary":"#705c30","tertiary-fixed":"#f8e0a8","error":"#b83230","error-container":"#ffdad8","on-error-container":"#690005"}}}};</script>
+<script>tailwind.config={darkMode:"class",theme:{extend:{colors:{"primary-fixed":"var(--primary-fixed)","primary-fixed-dim":"var(--primary-fixed-dim)","on-primary-fixed":"var(--on-primary-fixed)","primary-container":"var(--primary-container)","on-primary-container":"var(--on-primary-container)","primary":"var(--primary)","on-primary":"var(--on-primary)","secondary":"var(--secondary)","secondary-container":"var(--secondary-container)","on-surface-variant":"var(--on-surface-variant)","outline":"var(--outline)","outline-variant":"var(--outline-variant)","on-surface":"var(--on-surface)","surface-container-lowest":"var(--surface-container-lowest)","surface-container-low":"var(--surface-container-low)","surface-container":"var(--surface-container)","surface-container-high":"var(--surface-container-high)","surface-container-highest":"var(--surface-container-highest)","surface-bright":"var(--surface-bright)","surface-dim":"var(--surface-dim)","surface-variant":"var(--surface-variant)","background":"var(--background)","surface":"var(--surface)","tertiary":"var(--tertiary)","tertiary-fixed":"var(--tertiary-fixed)","error":"var(--error)","error-container":"var(--error-container)","on-error-container":"var(--on-error-container)"}}}};</script>
 <style>
   body{font-family:'Inter',sans-serif}
   .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400}
+  :root{
+    --primary-fixed:#c8e8d0;--primary-fixed-dim:#8ecf9e;--on-primary-fixed:#002110;
+    --primary-container:#78a886;--on-primary-container:#d8f0de;--primary:#4a7c59;--on-primary:#ffffff;
+    --secondary:#6b6358;--secondary-container:#f0e8db;--on-surface-variant:#4a4e4a;
+    --outline:#74796e;--outline-variant:#c4c8bc;--on-surface:#2e3230;
+    --surface-container-lowest:#ffffff;--surface-container-low:#f5f1ea;--surface-container:#f0ece4;
+    --surface-container-high:#eae6de;--surface-container-highest:#e4e0d8;--surface-bright:#faf6f0;
+    --surface-dim:#dbd7cf;--surface-variant:#e4e0d8;--background:#faf6f0;--surface:#faf6f0;
+    --tertiary:#705c30;--tertiary-fixed:#f8e0a8;--error:#b83230;--error-container:#ffdad8;--on-error-container:#690005;
+  }
+  .dark{
+    --primary-fixed:#6dfe9c;--primary-fixed-dim:#4de082;--on-primary-fixed:#00210c;
+    --primary-container:#4ade80;--on-primary-container:#005e2d;--primary:#6bfb9a;--on-primary:#003919;
+    --secondary:#bcc7de;--secondary-container:#3e495d;--on-surface-variant:#bccabb;
+    --outline:#869486;--outline-variant:#3d4a3e;--on-surface:#e0e3e5;
+    --surface-container-lowest:#0b0f10;--surface-container-low:#191c1e;--surface-container:#1d2022;
+    --surface-container-high:#272a2c;--surface-container-highest:#323537;--surface-bright:#363a3b;
+    --surface-dim:#101415;--surface-variant:#323537;--background:#101415;--surface:#101415;
+    --tertiary:#d5e3e3;--tertiary-fixed:#d7e5e5;--error:#ffb4ab;--error-container:#93000a;--on-error-container:#ffdad6;
+  }
 </style>
 </head>
 <body class="bg-surface text-on-surface flex min-h-screen">
@@ -19,8 +39,8 @@
 <!-- Sidebar -->
 <aside class="w-[280px] h-screen fixed left-0 top-0 bg-surface-container border-r border-outline-variant flex flex-col gap-4 p-6 z-50">
   <div class="flex items-center gap-3 mb-6">
-    <div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center">
-      <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;">account_balance</span>
+    <div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center">
+      <span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings:'FILL' 1;">account_balance</span>
     </div>
     <div>
       <h1 class="text-lg font-bold text-primary" data-i18n="app_title">Mezarlık Sistemi</h1>
@@ -59,6 +79,9 @@
       <input id="searchInput" type="text" data-i18n-ph="search_ph" placeholder="Ara..." class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-primary"/>
     </div>
     <div class="flex items-center gap-3">
+      <button id="btnTheme" onclick="toggleTheme()" class="flex items-center justify-center w-9 h-9 border border-outline-variant rounded-full hover:bg-surface-container-low transition-colors" title="Tema">
+        <span class="material-symbols-outlined text-[18px]" id="themeIcon">dark_mode</span>
+      </button>
       <div class="relative">
         <button id="langBtn" onclick="toggleLangMenu()" class="flex items-center gap-1 px-3 py-2 border border-outline-variant rounded-full text-xs font-semibold hover:bg-surface-container-low transition-colors">
           <span class="material-symbols-outlined text-[16px]">translate</span><span id="langCurrent">Türkçe</span>
@@ -69,7 +92,7 @@
           <button data-lang-opt="en" onclick="chooseLang('en')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-container-low flex items-center gap-2"><img src="https://flagcdn.com/w40/gb.png" alt="EN" class="w-5 h-5 rounded-full object-cover"/>English</button>
         </div>
       </div>
-      <div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold">
+      <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold">
         <span class="material-symbols-outlined text-[20px]" style="font-variation-settings:'FILL' 1;">person</span>
       </div>
       <span id="username" class="text-sm font-semibold">admin</span>
@@ -99,14 +122,14 @@
         <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-2">
           <div class="flex justify-between items-start">
             <span class="text-xs font-semibold text-secondary" data-i18n="stat_total_plots">Toplam Mezar Sayısı</span>
-            <span class="material-symbols-outlined text-primary bg-primary-fixed p-2 rounded-lg">grid_view</span>
+            <span class="material-symbols-outlined text-primary bg-surface-container-high p-2 rounded-lg">grid_view</span>
           </div>
           <div id="statTotalPlots" class="text-3xl font-bold mt-2">—</div>
         </div>
         <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-2">
           <div class="flex justify-between items-start">
             <span class="text-xs font-semibold text-secondary" data-i18n="stat_occupancy">Doluluk Oranı</span>
-            <span class="material-symbols-outlined text-tertiary bg-tertiary-fixed p-2 rounded-lg">pie_chart</span>
+            <span class="material-symbols-outlined text-tertiary bg-surface-container-high p-2 rounded-lg">pie_chart</span>
           </div>
           <div id="statOccupancy" class="text-3xl font-bold mt-2">—</div>
           <div class="w-full bg-surface-container-high rounded-full h-2 mt-2 overflow-hidden">
@@ -123,7 +146,7 @@
         <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-2">
           <div class="flex justify-between items-start">
             <span class="text-xs font-semibold text-secondary" data-i18n="stat_revenue">Toplam Gelir</span>
-            <span class="material-symbols-outlined text-primary bg-primary-fixed-dim p-2 rounded-lg">payments</span>
+            <span class="material-symbols-outlined text-primary bg-surface-container-high p-2 rounded-lg">payments</span>
           </div>
           <div id="statRevenue" class="text-3xl font-bold mt-2">—</div>
         </div>
@@ -137,7 +160,7 @@
         <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-2">
           <div class="flex justify-between items-start">
             <span class="text-xs font-semibold text-secondary" data-i18n="stat_net">Net Kâr</span>
-            <span class="material-symbols-outlined text-primary bg-primary-fixed p-2 rounded-lg">trending_up</span>
+            <span class="material-symbols-outlined text-primary bg-surface-container-high p-2 rounded-lg">trending_up</span>
           </div>
           <div id="statNet" class="text-3xl font-bold mt-2">—</div>
         </div>
@@ -174,6 +197,9 @@
       <div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
         <div class="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-bright">
           <h3 id="tableTitle" class="text-lg font-semibold">Kayıtlar</h3>
+          <button onclick="exportExcel()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-low text-on-surface-variant rounded-lg border border-outline-variant hover:bg-surface-container-high transition-colors text-sm font-semibold">
+            <span class="material-symbols-outlined text-[18px]">download</span><span data-i18n="excel_export">Excel'e Aktar</span>
+          </button>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-sm">
@@ -237,6 +263,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.15/index.global.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.15/locales-all.global.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>

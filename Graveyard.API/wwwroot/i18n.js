@@ -81,6 +81,7 @@ const I18N = {
     pub_admin: 'Yönetici Girişi',
     pub_show_map: 'Haritada Göster',
     pub_plot: 'Parsel',
+    excel_export: "Excel'e Aktar",
   },
   en: {
     app_title: 'Cemetery System',
@@ -163,6 +164,7 @@ const I18N = {
     pub_admin: 'Admin Login',
     pub_show_map: 'Show on Map',
     pub_plot: 'Plot',
+    excel_export: 'Export to Excel',
   },
 };
 
