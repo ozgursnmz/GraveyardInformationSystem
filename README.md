@@ -19,13 +19,21 @@ The system digitises the entire lifecycle of a municipal cemetery — plots, dec
 - **Interactive map** (Leaflet + OpenStreetMap) of all plots, colour‑coded by status (Occupied / Available / Reserved / Maintenance), with popups and **Google Maps directions**.
 - **Calendar** (FullCalendar) combining funeral services and visitor logs.
 - **One‑step burial registration** — creates the person and the deceased record in a single transaction; plot & permit chosen from dropdowns.
+<img width="2940" height="1674" alt="image" src="https://github.com/user-attachments/assets/003ce8df-6e3b-4299-8980-fbb0901e63fd" />
+
 - **Reference dropdowns** for every foreign key, so invalid IDs are impossible.
 - **PDF payment receipts** (embedded Turkish‑capable font) and **Excel export** of any table.
 - **Role management**, **Turkish / English** interface, **light / dark** theme, and a **responsive / mobile‑friendly** layout.
 
+- <img width="2930" height="1648" alt="image" src="https://github.com/user-attachments/assets/d87889b1-8813-44c5-8bf1-90741c7006a6" />
+
+
 ### Public Grave Finder (`find.html`, no login)
 - Search by **name** and **death year**.
 - Shows the **zone**, **plot number**, **map location** and a **directions** link — exactly what a visitor needs on site.
+
+<img width="2940" height="1648" alt="image" src="https://github.com/user-attachments/assets/601fd97d-7f63-46c3-96bd-b52915ca06f8" />
+
 
 ---
 <img width="2366" height="1522" alt="image" src="https://github.com/user-attachments/assets/736809b5-8ffd-475d-9be8-e2320fa6f2ab" />
