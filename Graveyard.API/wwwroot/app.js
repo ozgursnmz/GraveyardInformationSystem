@@ -128,7 +128,9 @@ const ENTITIES = {
 };
 
 let currentKey = 'gravePlots';
+let currentView = 'home';
 let currentData = [];
+let currentMonths = 0; // 0 = tum zamanlar
 
 const el = (id) => document.getElementById(id);
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : v);
@@ -145,7 +147,7 @@ function badgeHtml(value) {
 // --- Istatistik kartlari ---
 async function loadStats() {
   try {
-    const res = await fetch('/api/Stats');
+    const res = await fetch('/api/Stats?months=' + currentMonths);
     const s = await res.json();
     const loc = LANG === 'tr' ? 'tr-TR' : 'en-US';
     el('statTotalPlots').textContent = s.totalPlots.toLocaleString(loc);
@@ -153,22 +155,125 @@ async function loadStats() {
     el('statOccupancyBar').style.width = s.occupancyRate + '%';
     el('statDeceased').textContent = s.totalDeceased.toLocaleString(loc);
     el('statRevenue').textContent = s.totalRevenue.toLocaleString(loc) + ' ₺';
+    el('statExpense').textContent = s.totalExpense.toLocaleString(loc) + ' ₺';
+    const net = el('statNet');
+    net.textContent = s.netProfit.toLocaleString(loc) + ' ₺';
+    net.classList.toggle('text-error', s.netProfit < 0);
   } catch (e) { /* sessiz */ }
 }
 
-// --- Tablo ---
-async function loadEntity(entityKey) {
-  currentKey = entityKey;
-  const cfg = ENTITIES[entityKey];
+// --- Grafikler (Chart.js) ---
+let charts = {};
 
-  document.querySelectorAll('[data-entity]').forEach((a) => {
-    const active = a.dataset.entity === entityKey;
+function drawChart(canvasId, type, data) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx || typeof Chart === 'undefined') return;
+  if (charts[canvasId]) charts[canvasId].destroy();
+  charts[canvasId] = new Chart(ctx, {
+    type, data,
+    options: {
+      responsive: true,
+      plugins: { legend: { display: type === 'doughnut', position: 'bottom' } },
+      scales: type === 'doughnut' ? {} : { y: { beginAtZero: true, ticks: { precision: 0 } } },
+    },
+  });
+}
+
+async function loadCharts() {
+  if (typeof Chart === 'undefined') return;
+  try {
+    const res = await fetch('/api/Stats/charts?months=' + currentMonths);
+    const d = await res.json();
+    const green = '#4a7c59', greenDim = '#8ecf9e', slate = '#6b6358', gold = '#705c30', mid = '#c4a66a';
+    const loc = LANG === 'tr' ? 'tr-TR' : 'en-US';
+
+    drawChart('chartZone', 'bar', {
+      labels: d.zoneOccupancy.map((x) => x.label),
+      datasets: [{ data: d.zoneOccupancy.map((x) => x.value), backgroundColor: green, borderRadius: 6 }],
+    });
+
+    const monthLabels = d.deathsByMonth.map((x) =>
+      new Date(2024, parseInt(x.label) - 1, 1).toLocaleDateString(loc, { month: 'short' }));
+    drawChart('chartDeaths', 'line', {
+      labels: monthLabels,
+      datasets: [{ data: d.deathsByMonth.map((x) => x.value), borderColor: green, backgroundColor: greenDim, fill: true, tension: 0.3 }],
+    });
+
+    drawChart('chartPayments', 'doughnut', {
+      labels: d.paymentMethods.map((x) => x.label),
+      datasets: [{ data: d.paymentMethods.map((x) => x.value), backgroundColor: [green, gold, slate, greenDim, mid] }],
+    });
+
+    // Gelir / Gider / Net - bar
+    const net = d.income - d.expense;
+    drawChart('chartFinance', 'bar', {
+      labels: [t('fin_income'), t('fin_expense'), t('fin_net')],
+      datasets: [{ data: [d.income, d.expense, net], backgroundColor: [green, '#b83230', slate], borderRadius: 6 }],
+    });
+
+    // Aylara gore bakim maliyeti - line
+    const maintMonths = d.maintenanceByMonth.map((x) =>
+      new Date(2024, parseInt(x.label) - 1, 1).toLocaleDateString(loc, { month: 'short' }));
+    drawChart('chartMaintenance', 'line', {
+      labels: maintMonths,
+      datasets: [{ data: d.maintenanceByMonth.map((x) => x.value), borderColor: gold, backgroundColor: 'rgba(112,92,48,.15)', fill: true, tension: 0.3 }],
+    });
+  } catch (e) { /* sessiz */ }
+}
+
+// --- Gorunum: sidebar aktiflik ---
+function highlightNav(id) {
+  document.querySelectorAll('nav a[data-entity], nav a[data-view]').forEach((a) => {
+    const key = a.dataset.entity || a.dataset.view;
+    const active = key === id;
     a.classList.toggle('bg-primary-container', active);
     a.classList.toggle('text-on-primary-container', active);
     a.classList.toggle('font-bold', active);
     a.classList.toggle('text-secondary', !active);
   });
+}
 
+// --- Donem filtresi ---
+function highlightPeriod() {
+  document.querySelectorAll('#periodBar button').forEach((b) => {
+    const active = parseInt(b.dataset.period) === currentMonths;
+    b.classList.toggle('bg-primary', active);
+    b.classList.toggle('text-on-primary', active);
+    b.classList.toggle('border-primary', active);
+  });
+}
+
+function setPeriod(months) {
+  currentMonths = months;
+  highlightPeriod();
+  loadStats();
+  loadCharts();
+}
+
+// --- Ana sayfa gorunumu (istatistik + grafik) ---
+function showHome() {
+  currentView = 'home';
+  el('homeView').classList.remove('hidden');
+  el('tableView').classList.add('hidden');
+  el('btnAdd').style.display = 'none';
+  el('pageTitle').textContent = t('nav_home');
+  highlightNav('home');
+  highlightPeriod();
+  loadStats();
+  loadCharts();
+}
+
+// --- Tablo gorunumu ---
+async function loadEntity(entityKey) {
+  currentKey = entityKey;
+  currentView = entityKey;
+  const cfg = ENTITIES[entityKey];
+
+  el('homeView').classList.add('hidden');
+  el('tableView').classList.remove('hidden');
+  highlightNav(entityKey);
+
+  el('pageTitle').textContent = t(cfg.label);
   el('tableTitle').textContent = t(cfg.label);
   el('btnAdd').style.display = cfg.readOnly ? 'none' : 'flex';
 
@@ -331,15 +436,21 @@ function friendlyError(text, status) {
   return t('err_generic');
 }
 
-// Dil degisince arayuzu ve tabloyu yenile
-window.onLangChange = () => { loadEntity(currentKey); loadStats(); };
+// Dil degisince aktif gorunumu yenile
+window.onLangChange = () => {
+  if (currentView === 'home') showHome();
+  else loadEntity(currentView);
+};
 
 // --- Baslat ---
 document.addEventListener('DOMContentLoaded', () => {
   applyI18n();
   el('username').textContent = localStorage.getItem('username') || 'admin';
-  document.querySelectorAll('[data-entity]').forEach((a) => {
+  document.querySelectorAll('nav a[data-entity]').forEach((a) => {
     a.addEventListener('click', (e) => { e.preventDefault(); loadEntity(a.dataset.entity); });
+  });
+  document.querySelectorAll('nav a[data-view="home"]').forEach((a) => {
+    a.addEventListener('click', (e) => { e.preventDefault(); showHome(); });
   });
   el('searchInput').addEventListener('input', renderRows);
   el('btnAdd').addEventListener('click', openAdd);
@@ -348,6 +459,5 @@ document.addEventListener('DOMContentLoaded', () => {
   el('btnClose').addEventListener('click', closeModal);
   el('btnLogout').addEventListener('click', logout);
 
-  loadStats();
-  loadEntity('gravePlots');
+  showHome();
 });

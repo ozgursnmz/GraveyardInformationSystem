@@ -8,5 +8,7 @@ public record StatsDto(
     int ReservedPlots,
     double OccupancyRate,
     int TotalDeceased,
-    double TotalRevenue
+    double TotalRevenue,    // toplam gelir (odemeler)
+    double TotalExpense,    // toplam gider (bakim maliyetleri)
+    double NetProfit        // net kar = gelir - gider
 );
