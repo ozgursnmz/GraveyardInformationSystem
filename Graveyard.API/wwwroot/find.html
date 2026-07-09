@@ -40,11 +40,12 @@
 
 <main class="max-w-5xl mx-auto px-6 py-8">
   <p class="text-on-surface-variant mb-4" data-i18n="pub_subtitle">Vefat eden yakınınızın adını girerek mezar konumunu bulun.</p>
-  <div class="flex gap-2 mb-6">
-    <div class="relative flex-1">
+  <div class="flex gap-2 mb-6 flex-wrap">
+    <div class="relative flex-1 min-w-[200px]">
       <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
       <input id="q" type="text" data-i18n-ph="pub_search_ph" placeholder="Ad soyad ile arayın..." class="w-full pl-11 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-full focus:outline-none focus:ring-2 focus:ring-primary"/>
     </div>
+    <input id="qYear" type="number" data-i18n-ph="pub_year" placeholder="Ölüm Yılı" class="w-36 px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-full focus:outline-none focus:ring-2 focus:ring-primary"/>
     <button id="searchBtn" class="px-6 py-3 bg-primary text-on-primary rounded-full font-semibold hover:opacity-90 transition-opacity" data-i18n="pub_search_btn">Ara</button>
   </div>
 
@@ -61,7 +62,7 @@
   let map, markers;
 
   function initMap() {
-    map = L.map('map').setView([37.05, 35.35], 13);
+    map = L.map('map').setView([36.8975, 30.6247], 17);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
     markers = L.layerGroup().addTo(map);
     setTimeout(() => map.invalidateSize(), 200);
@@ -79,15 +80,18 @@
 
   function render() {
     const q = document.getElementById('q').value.trim().toLowerCase();
+    const yr = document.getElementById('qYear').value.trim();
     const box = document.getElementById('results');
     markers.clearLayers();
 
-    if (!q) {
+    if (!q && !yr) {
       box.innerHTML = `<div class="text-on-surface-variant text-center py-10">${t('pub_hint')}</div>`;
       return;
     }
 
-    const matches = allPlots.filter(p => p.occupant.toLowerCase().includes(q));
+    let matches = allPlots;
+    if (q) matches = matches.filter(p => p.occupant.toLowerCase().includes(q));
+    if (yr) matches = matches.filter(p => String(p.deathYear || '') === yr);
     if (!matches.length) {
       box.innerHTML = `<div class="text-on-surface-variant text-center py-10">${t('pub_no_result')}</div>`;
       return;
@@ -97,17 +101,22 @@
     box.innerHTML = matches.map((p, i) => {
       if (p.latitude != null && p.longitude != null) {
         const mk = L.marker([p.latitude, p.longitude]).addTo(markers);
-        mk.bindPopup(`<b>${p.occupant}</b><br>${t('pub_plot')}: ${p.plotNumber}<br>${t('map_zone')}: ${p.zoneName || '—'}`);
+        mk.bindPopup(`<b>${p.occupant}</b><br>${t('pub_plot')}: ${p.plotNumber}<br>${t('map_zone')}: ${p.zoneName || '—'}<br><a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" rel="noopener" style="color:#4a7c59;font-weight:600;">${t('directions')} ↗</a>`);
         pts.push([p.latitude, p.longitude]);
       }
       return `<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-start justify-between gap-3">
         <div>
           <div class="font-semibold text-lg">${p.occupant}</div>
-          <div class="text-sm text-on-surface-variant mt-1">${t('map_zone')}: ${p.zoneName || '—'} · ${t('pub_plot')}: ${p.plotNumber}</div>
+          <div class="text-sm text-on-surface-variant mt-1">${t('map_zone')}: ${p.zoneName || '—'} · ${t('pub_plot')}: ${p.plotNumber}${p.deathYear ? ' · ' + p.deathYear : ''}</div>
         </div>
-        <button onclick="focusPlot(${p.latitude},${p.longitude})" class="shrink-0 flex items-center gap-1 px-3 py-2 bg-primary-fixed text-primary rounded-full text-xs font-semibold hover:bg-primary-container hover:text-on-primary transition-colors">
-          <span class="material-symbols-outlined text-[16px]">location_on</span><span data-nolang>${t('pub_show_map')}</span>
-        </button>
+        <div class="shrink-0 flex flex-col gap-2">
+          <button onclick="focusPlot(${p.latitude},${p.longitude})" class="flex items-center justify-center gap-1 px-3 py-2 bg-primary-fixed text-primary rounded-full text-xs font-semibold hover:bg-primary-container hover:text-on-primary transition-colors">
+            <span class="material-symbols-outlined text-[16px]">location_on</span><span>${t('pub_show_map')}</span>
+          </button>
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" rel="noopener" class="flex items-center justify-center gap-1 px-3 py-2 bg-primary text-on-primary rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-[16px]">directions</span><span>${t('directions')}</span>
+          </a>
+        </div>
       </div>`;
     }).join('');
 
@@ -129,6 +138,7 @@
     loadData();
     document.getElementById('searchBtn').addEventListener('click', render);
     document.getElementById('q').addEventListener('input', render);
+    document.getElementById('qYear').addEventListener('input', render);
   });
 </script>
 </body>

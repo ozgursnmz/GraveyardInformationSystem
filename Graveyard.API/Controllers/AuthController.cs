@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Graveyard.API.Data;
 using Graveyard.API.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -22,7 +23,8 @@ public class AuthController : ControllerBase
         _config = config;
     }
 
-    // POST: api/Auth/login  -> kullanici adi + sifre ile JWT token al
+    // POST: api/Auth/login  -> kullanici adi + sifre ile JWT token al (halka acik)
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
     {

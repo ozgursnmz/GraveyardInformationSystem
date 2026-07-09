@@ -430,3 +430,7 @@ FodyWeavers.xsd
 
 # macOS
 .DS_Store
+
+# Local secrets (gizli ayarlar)
+appsettings.Development.json
+**/appsettings.Development.json

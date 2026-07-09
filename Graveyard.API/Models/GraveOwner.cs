@@ -17,9 +17,11 @@ public partial class GraveOwner
 
     public DateOnly? RegistrationDate { get; set; }
 
+    public string? Relationship { get; set; }
+
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
     public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
 
-    public virtual Person SsnNavigation { get; set; } = null!;
+    public virtual Person? SsnNavigation { get; set; }
 }

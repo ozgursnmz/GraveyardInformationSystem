@@ -15,6 +15,10 @@ public partial class Person
 
     public string? Gender { get; set; }
 
+    public string? MotherName { get; set; }
+
+    public string? FatherName { get; set; }
+
     public virtual DeceasedPerson? DeceasedPerson { get; set; }
 
     public virtual Employee? Employee { get; set; }

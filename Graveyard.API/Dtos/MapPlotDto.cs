@@ -7,5 +7,6 @@ public record MapPlotDto(
     double? Longitude,
     string? Status,
     string? ZoneName,
-    string? Occupant   // yatan kisi (varsa)
+    string? Occupant,   // yatan kisi (varsa)
+    int? DeathYear      // olum yili (sorgulama filtresi icin)
 );

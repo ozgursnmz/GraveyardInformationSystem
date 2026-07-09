@@ -21,11 +21,13 @@ public partial class DeceasedPerson
 
     public string? PermitNumber { get; set; }
 
+    public DateOnly? BurialDate { get; set; }
+
     public virtual ICollection<FuneralService> FuneralServices { get; set; } = new List<FuneralService>();
 
     public virtual BurialPermit? PermitNumberNavigation { get; set; }
 
     public virtual GravePlot? PlotNumberNavigation { get; set; }
 
-    public virtual Person SsnNavigation { get; set; } = null!;
+    public virtual Person? SsnNavigation { get; set; }
 }

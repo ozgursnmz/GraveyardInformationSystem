@@ -1,6 +1,7 @@
 using System.Text;
 using Graveyard.API.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -34,7 +35,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(jwt["Key"]!))
         };
     });
-builder.Services.AddAuthorization();
+// Varsayilan: TUM uclar kimlik dogrulamasi ister.
+// Halka acik olmasi gerekenler [AllowAnonymous] ile isaretlenir (login + mezar sorgulama).
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 // Swagger (test arayuzu) + JWT token destegi
 builder.Services.AddEndpointsApiExplorer();

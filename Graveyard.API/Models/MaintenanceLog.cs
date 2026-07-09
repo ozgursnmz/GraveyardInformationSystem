@@ -21,5 +21,5 @@ public partial class MaintenanceLog
 
     public virtual Employee? Employee { get; set; }
 
-    public virtual GravePlot PlotNumberNavigation { get; set; } = null!;
+    public virtual GravePlot? PlotNumberNavigation { get; set; }
 }

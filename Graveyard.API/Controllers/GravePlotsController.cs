@@ -43,7 +43,8 @@ public class GravePlotsController : ControllerBase
         return await query.ToListAsync();
     }
 
-    // GET: api/GravePlots/map  -> harita icin koordinatli parseller (herkese acik)
+    // GET: api/GravePlots/map  -> harita/mezar sorgulama icin (halka acik, sadece ad+konum)
+    [AllowAnonymous]
     [HttpGet("map")]
     public async Task<ActionResult<IEnumerable<MapPlotDto>>> Map()
     {
@@ -54,7 +55,10 @@ public class GravePlotsController : ControllerBase
                 p.Zone!.Name,
                 p.DeceasedPerson != null
                     ? p.DeceasedPerson.SsnNavigation.FirstName + " " + p.DeceasedPerson.SsnNavigation.LastName
-                    : null))
+                    : null,
+                (p.DeceasedPerson != null && p.DeceasedPerson.DateOfDeath != null)
+                    ? p.DeceasedPerson.DateOfDeath.Value.Year
+                    : (int?)null))
             .ToListAsync();
     }
 

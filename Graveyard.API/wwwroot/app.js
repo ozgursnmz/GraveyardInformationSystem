@@ -12,6 +12,31 @@ function logout() {
   location.href = 'login.html';
 }
 
+// --- Mobil sidebar ---
+function openSidebar() {
+  const s = document.getElementById('sidebar');
+  s.classList.remove('-translate-x-full');
+  s.classList.add('translate-x-0');
+  document.getElementById('sidebarOverlay').classList.remove('hidden');
+}
+function closeSidebar() {
+  const s = document.getElementById('sidebar');
+  s.classList.add('-translate-x-full');
+  s.classList.remove('translate-x-0');
+  document.getElementById('sidebarOverlay').classList.add('hidden');
+}
+
+// --- Kullanici menusu (sag ust) ---
+function toggleUserMenu() {
+  const m = document.getElementById('userMenu');
+  if (m) m.classList.toggle('hidden');
+}
+document.addEventListener('click', (e) => {
+  const b = document.getElementById('userBtn');
+  const m = document.getElementById('userMenu');
+  if (m && b && !b.contains(e.target) && !m.contains(e.target)) m.classList.add('hidden');
+});
+
 // --- Tema (acik/koyu) ---
 function applyTheme() {
   const dark = localStorage.getItem('theme') === 'dark';
@@ -33,6 +58,27 @@ const lbl = (o) => (o && (o[LANG] || o.tr)) || '';
 // --- Entity yapilandirmalari ---
 // label: i18n anahtari | key: birincil anahtar alan(lar)i | readOnly: sadece okuma
 const ENTITIES = {
+  people: {
+    label: 'nav_people', endpoint: 'People', key: ['ssn'],
+    columns: [
+      { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' } },
+      { field: 'firstName', label: { tr: 'Ad', en: 'First Name' } },
+      { field: 'lastName', label: { tr: 'Soyad', en: 'Last Name' } },
+      { field: 'motherName', label: { tr: 'Anne Adı', en: 'Mother' } },
+      { field: 'fatherName', label: { tr: 'Baba Adı', en: 'Father' } },
+      { field: 'dateOfBirth', label: { tr: 'Doğum Tarihi', en: 'Date of Birth' } },
+      { field: 'gender', label: { tr: 'Cinsiyet', en: 'Gender' } },
+    ],
+    fields: [
+      { field: 'ssn', label: { tr: 'TC / SSN (11 hane)', en: 'SSN (11 digits)' }, type: 'text', required: true, pk: true },
+      { field: 'firstName', label: { tr: 'Ad', en: 'First Name' }, type: 'text' },
+      { field: 'lastName', label: { tr: 'Soyad', en: 'Last Name' }, type: 'text' },
+      { field: 'motherName', label: { tr: 'Anne Adı', en: 'Mother’s Name' }, type: 'text' },
+      { field: 'fatherName', label: { tr: 'Baba Adı', en: 'Father’s Name' }, type: 'text' },
+      { field: 'dateOfBirth', label: { tr: 'Doğum Tarihi', en: 'Date of Birth' }, type: 'date' },
+      { field: 'gender', label: { tr: 'Cinsiyet', en: 'Gender' }, type: 'select', options: ['Male', 'Female', 'Unknown'] },
+    ],
+  },
   gravePlots: {
     label: 'nav_gravePlots', endpoint: 'GravePlots', key: ['plotNumber'],
     columns: [
@@ -44,17 +90,17 @@ const ENTITIES = {
     ],
     fields: [
       { field: 'plotNumber', label: { tr: 'Parsel No', en: 'Plot No' }, type: 'text', required: true, pk: true },
-      { field: 'zoneId', label: { tr: 'Bölge ID (ör. Z001)', en: 'Zone ID (e.g. Z001)' }, type: 'text' },
-      { field: 'status', label: { tr: 'Durum', en: 'Status' }, type: 'select', options: ['Available', 'Occupied', 'Reserved'] },
+      { field: 'zoneId', label: { tr: 'Bölge', en: 'Zone' }, type: 'refSelect', ref: { endpoint: 'CemeteryZones', value: 'zoneId', label: 'name' } },
+      { field: 'status', label: { tr: 'Durum', en: 'Status' }, type: 'select', options: ['Available', 'Occupied', 'Reserved', 'Maintenance'] },
       { field: 'length', label: { tr: 'Uzunluk (m)', en: 'Length (m)' }, type: 'number' },
       { field: 'width', label: { tr: 'Genişlik (m)', en: 'Width (m)' }, type: 'number' },
       { field: 'latitude', label: { tr: 'Enlem', en: 'Latitude' }, type: 'number' },
       { field: 'longitude', label: { tr: 'Boylam', en: 'Longitude' }, type: 'number' },
-      { field: 'monumentCode', label: { tr: 'Anıt Kodu (ör. M001)', en: 'Monument Code (e.g. M001)' }, type: 'text' },
+      { field: 'monumentCode', label: { tr: 'Anıt', en: 'Monument' }, type: 'refSelect', ref: { endpoint: 'MonumentTypes', value: 'monumentCode', labelFields: ['material', 'style'] } },
     ],
   },
   burialRecords: {
-    label: 'nav_burialRecords', endpoint: 'BurialRecords', readOnly: true, key: ['ssn'],
+    label: 'nav_burialRecords', endpoint: 'BurialRecords', writeEndpoint: 'DeceasedPeople', key: ['ssn'],
     columns: [
       { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' } },
       { field: 'deceasedName', label: { tr: 'İsim Soyisim', en: 'Full Name' } },
@@ -63,19 +109,39 @@ const ENTITIES = {
       { field: 'dateOfDeath', label: { tr: 'Vefat Tarihi', en: 'Date of Death' } },
       { field: 'religion', label: { tr: 'Din', en: 'Religion' } },
     ],
+    writeEndpoint: 'DeceasedPeople/full',
+    fields: [
+      { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' }, type: 'text', required: true, pk: true },
+      { field: 'firstName', label: { tr: 'Ad', en: 'First Name' }, type: 'text' },
+      { field: 'lastName', label: { tr: 'Soyad', en: 'Last Name' }, type: 'text' },
+      { field: 'dateOfBirth', label: { tr: 'Doğum Tarihi', en: 'Date of Birth' }, type: 'date' },
+      { field: 'gender', label: { tr: 'Cinsiyet', en: 'Gender' }, type: 'select', options: ['Male', 'Female', 'Unknown'] },
+      { field: 'motherName', label: { tr: 'Anne Adı', en: 'Mother’s Name' }, type: 'text' },
+      { field: 'fatherName', label: { tr: 'Baba Adı', en: 'Father’s Name' }, type: 'text' },
+      { field: 'dateOfDeath', label: { tr: 'Vefat Tarihi', en: 'Date of Death' }, type: 'date' },
+      { field: 'burialDate', label: { tr: 'Defin Tarihi', en: 'Burial Date' }, type: 'date' },
+      { field: 'causeOfDeath', label: { tr: 'Ölüm Nedeni', en: 'Cause of Death' }, type: 'text' },
+      { field: 'religion', label: { tr: 'Din', en: 'Religion' }, type: 'text' },
+      { field: 'veteranStatus', label: { tr: 'Gazi/Şehit', en: 'Veteran' }, type: 'select', options: ['Yes', 'No'] },
+      { field: 'funeralPreferences', label: { tr: 'Cenaze Tercihleri', en: 'Funeral Preferences' }, type: 'text' },
+      { field: 'plotNumber', label: { tr: 'Parsel (boş bırakılabilir)', en: 'Plot (optional)' }, type: 'plotSelect' },
+      { field: 'permitNumber', label: { tr: 'Defin İzni (boş bırakılabilir)', en: 'Permit (optional)' }, type: 'permitSelect' },
+    ],
   },
   graveOwners: {
     label: 'nav_graveOwners', endpoint: 'GraveOwners', key: ['ssn'],
     columns: [
       { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' } },
       { field: 'ownerType', label: { tr: 'Tür', en: 'Type' }, badge: true },
+      { field: 'relationship', label: { tr: 'Yakınlık', en: 'Relationship' } },
       { field: 'phoneNumber', label: { tr: 'Telefon', en: 'Phone' } },
       { field: 'email', label: { tr: 'E-posta', en: 'Email' } },
       { field: 'registrationDate', label: { tr: 'Kayıt Tarihi', en: 'Registration Date' } },
     ],
     fields: [
-      { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' }, type: 'text', required: true, pk: true },
+      { field: 'ssn', label: { tr: 'Kişi (TC / SSN)', en: 'Person (SSN)' }, type: 'refSelect', required: true, pk: true, ref: { endpoint: 'People', value: 'ssn', labelFields: ['firstName', 'lastName'] } },
       { field: 'ownerType', label: { tr: 'Tür', en: 'Type' }, type: 'select', options: ['Individual', 'Family', 'Institution'] },
+      { field: 'relationship', label: { tr: 'Meftuna Yakınlık Derecesi', en: 'Relationship to Deceased' }, type: 'text' },
       { field: 'phoneNumber', label: { tr: 'Telefon', en: 'Phone' }, type: 'text' },
       { field: 'email', label: { tr: 'E-posta', en: 'Email' }, type: 'text' },
       { field: 'address', label: { tr: 'Adres', en: 'Address' }, type: 'text' },
@@ -118,7 +184,7 @@ const ENTITIES = {
       { field: 'paymentMethod', label: { tr: 'Yöntem', en: 'Method' }, type: 'select', options: ['Cash', 'Card', 'Transfer'] },
       { field: 'currency', label: { tr: 'Para Birimi', en: 'Currency' }, type: 'text' },
       { field: 'billingAddress', label: { tr: 'Fatura Adresi', en: 'Billing Address' }, type: 'text' },
-      { field: 'ownerSsn', label: { tr: 'Sahip SSN', en: 'Owner SSN' }, type: 'text' },
+      { field: 'ownerSsn', label: { tr: 'Sahip', en: 'Owner' }, type: 'refSelect', ref: { endpoint: 'GraveOwners', value: 'ssn', label: 'ownerType' } },
     ],
   },
   maintenanceLogs: {
@@ -132,13 +198,144 @@ const ENTITIES = {
       { field: 'cost', label: { tr: 'Maliyet', en: 'Cost' } },
     ],
     fields: [
-      { field: 'plotNumber', label: { tr: 'Parsel No', en: 'Plot No' }, type: 'text', required: true, pk: true },
+      { field: 'plotNumber', label: { tr: 'Parsel', en: 'Plot' }, type: 'refSelect', required: true, pk: true, ref: { endpoint: 'GravePlots', value: 'plotNumber', label: 'status' } },
       { field: 'logNo', label: { tr: 'Kayıt No (ör. LOG002)', en: 'Log No (e.g. LOG002)' }, type: 'text', required: true, pk: true },
       { field: 'logDate', label: { tr: 'Tarih', en: 'Date' }, type: 'date' },
       { field: 'taskDescription', label: { tr: 'İşlem Açıklaması', en: 'Task Description' }, type: 'text' },
       { field: 'hoursSpent', label: { tr: 'Harcanan Saat', en: 'Hours Spent' }, type: 'number' },
       { field: 'cost', label: { tr: 'Maliyet', en: 'Cost' }, type: 'number' },
-      { field: 'employeeId', label: { tr: 'Çalışan ID (ör. EMP004)', en: 'Employee ID (e.g. EMP004)' }, type: 'text' },
+      { field: 'employeeId', label: { tr: 'Çalışan', en: 'Employee' }, type: 'refSelect', ref: { endpoint: 'Employees', value: 'employeeId', label: 'jobTitle' } },
+    ],
+  },
+  employees: {
+    label: 'nav_employees', endpoint: 'Employees', key: ['employeeId'],
+    columns: [
+      { field: 'employeeId', label: { tr: 'ID', en: 'ID' } },
+      { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' } },
+      { field: 'jobTitle', label: { tr: 'Görev', en: 'Job Title' } },
+      { field: 'shift', label: { tr: 'Vardiya', en: 'Shift' }, badge: true },
+      { field: 'salary', label: { tr: 'Maaş', en: 'Salary' } },
+      { field: 'hireDate', label: { tr: 'İşe Giriş', en: 'Hire Date' } },
+    ],
+    fields: [
+      { field: 'employeeId', label: { tr: 'Çalışan ID (ör. EMP011)', en: 'Employee ID' }, type: 'text', required: true, pk: true },
+      { field: 'ssn', label: { tr: 'Kişi (TC / SSN)', en: 'Person (SSN)' }, type: 'refSelect', ref: { endpoint: 'People', value: 'ssn', labelFields: ['firstName', 'lastName'] } },
+      { field: 'jobTitle', label: { tr: 'Görev', en: 'Job Title' }, type: 'text' },
+      { field: 'hireDate', label: { tr: 'İşe Giriş Tarihi', en: 'Hire Date' }, type: 'date' },
+      { field: 'salary', label: { tr: 'Maaş', en: 'Salary' }, type: 'number' },
+      { field: 'shift', label: { tr: 'Vardiya', en: 'Shift' }, type: 'select', options: ['Day', 'Night', 'Rotating'] },
+      { field: 'supervisorEmployeeId', label: { tr: 'Amir', en: 'Supervisor' }, type: 'refSelect', ref: { endpoint: 'Employees', value: 'employeeId', label: 'jobTitle' } },
+    ],
+  },
+  monumentTypes: {
+    label: 'nav_monumentTypes', endpoint: 'MonumentTypes', key: ['monumentCode'],
+    columns: [
+      { field: 'monumentCode', label: { tr: 'Kod', en: 'Code' } },
+      { field: 'material', label: { tr: 'Malzeme', en: 'Material' } },
+      { field: 'style', label: { tr: 'Stil', en: 'Style' } },
+      { field: 'maxHeight', label: { tr: 'Maks. Yükseklik', en: 'Max Height' } },
+      { field: 'baseWidth', label: { tr: 'Taban Genişliği', en: 'Base Width' } },
+      { field: 'color', label: { tr: 'Renk', en: 'Color' } },
+    ],
+    fields: [
+      { field: 'monumentCode', label: { tr: 'Kod (ör. M011)', en: 'Code' }, type: 'text', required: true, pk: true },
+      { field: 'material', label: { tr: 'Malzeme', en: 'Material' }, type: 'text' },
+      { field: 'style', label: { tr: 'Stil', en: 'Style' }, type: 'text' },
+      { field: 'maxHeight', label: { tr: 'Maks. Yükseklik', en: 'Max Height' }, type: 'number' },
+      { field: 'baseWidth', label: { tr: 'Taban Genişliği', en: 'Base Width' }, type: 'number' },
+      { field: 'color', label: { tr: 'Renk', en: 'Color' }, type: 'text' },
+    ],
+  },
+  reservations: {
+    label: 'nav_reservations', endpoint: 'Reservations', key: ['reservationId'],
+    columns: [
+      { field: 'reservationId', label: { tr: 'ID', en: 'ID' } },
+      { field: 'startDate', label: { tr: 'Başlangıç', en: 'Start' } },
+      { field: 'endDate', label: { tr: 'Bitiş', en: 'End' } },
+      { field: 'reservationType', label: { tr: 'Tür', en: 'Type' }, badge: true },
+      { field: 'ownerSsn', label: { tr: 'Sahip', en: 'Owner' } },
+      { field: 'plotNumber', label: { tr: 'Parsel', en: 'Plot' } },
+    ],
+    fields: [
+      { field: 'reservationId', label: { tr: 'Rezervasyon ID (ör. RES011)', en: 'Reservation ID' }, type: 'text', required: true, pk: true },
+      { field: 'startDate', label: { tr: 'Başlangıç Tarihi', en: 'Start Date' }, type: 'date' },
+      { field: 'endDate', label: { tr: 'Bitiş Tarihi', en: 'End Date' }, type: 'date' },
+      { field: 'reservationType', label: { tr: 'Tür', en: 'Type' }, type: 'text' },
+      { field: 'notes', label: { tr: 'Notlar', en: 'Notes' }, type: 'text' },
+      { field: 'ownerSsn', label: { tr: 'Sahip', en: 'Owner' }, type: 'refSelect', ref: { endpoint: 'GraveOwners', value: 'ssn', label: 'ownerType' } },
+      { field: 'receiptNo', label: { tr: 'Makbuz', en: 'Receipt' }, type: 'refSelect', ref: { endpoint: 'Payments', value: 'receiptNo', label: 'amount' } },
+      { field: 'plotNumber', label: { tr: 'Parsel', en: 'Plot' }, type: 'refSelect', ref: { endpoint: 'GravePlots', value: 'plotNumber', label: 'status' } },
+    ],
+  },
+  funeralServices: {
+    label: 'nav_funeralServices', endpoint: 'FuneralServices', key: ['serviceId'],
+    columns: [
+      { field: 'serviceId', label: { tr: 'ID', en: 'ID' } },
+      { field: 'serviceDate', label: { tr: 'Tarih', en: 'Date' } },
+      { field: 'startTime', label: { tr: 'Başlangıç', en: 'Start' } },
+      { field: 'endTime', label: { tr: 'Bitiş', en: 'End' } },
+      { field: 'serviceType', label: { tr: 'Tür', en: 'Type' }, badge: true },
+      { field: 'deceasedSsn', label: { tr: 'Vefat Eden', en: 'Deceased' } },
+    ],
+    fields: [
+      { field: 'serviceId', label: { tr: 'Servis ID (ör. SRV011)', en: 'Service ID' }, type: 'text', required: true, pk: true },
+      { field: 'serviceDate', label: { tr: 'Tarih', en: 'Date' }, type: 'date' },
+      { field: 'startTime', label: { tr: 'Başlangıç Saati', en: 'Start Time' }, type: 'time' },
+      { field: 'endTime', label: { tr: 'Bitiş Saati', en: 'End Time' }, type: 'time' },
+      { field: 'serviceType', label: { tr: 'Tür', en: 'Type' }, type: 'text' },
+      { field: 'expectedAttendees', label: { tr: 'Beklenen Katılımcı', en: 'Expected Attendees' }, type: 'number' },
+      { field: 'deceasedSsn', label: { tr: 'Vefat Eden (SSN)', en: 'Deceased (SSN)' }, type: 'refSelect', ref: { endpoint: 'DeceasedPeople', value: 'ssn', label: 'religion' } },
+    ],
+  },
+  burialPermits: {
+    label: 'nav_burialPermits', endpoint: 'BurialPermits', key: ['permitNumber'],
+    columns: [
+      { field: 'permitNumber', label: { tr: 'İzin No', en: 'Permit No' } },
+      { field: 'issuingAuthority', label: { tr: 'Veren Kurum', en: 'Authority' } },
+      { field: 'issueDate', label: { tr: 'Veriliş', en: 'Issued' } },
+      { field: 'expirationDate', label: { tr: 'Bitiş', en: 'Expires' } },
+      { field: 'authorizedSignature', label: { tr: 'İmza', en: 'Signature' } },
+    ],
+    fields: [
+      { field: 'permitNumber', label: { tr: 'İzin No (ör. PRM014)', en: 'Permit No' }, type: 'text', required: true, pk: true },
+      { field: 'issuingAuthority', label: { tr: 'Veren Kurum', en: 'Issuing Authority' }, type: 'text' },
+      { field: 'issueDate', label: { tr: 'Veriliş Tarihi', en: 'Issue Date' }, type: 'date' },
+      { field: 'expirationDate', label: { tr: 'Bitiş Tarihi', en: 'Expiration Date' }, type: 'date' },
+      { field: 'authorizedSignature', label: { tr: 'Yetkili İmza', en: 'Authorized Signature' }, type: 'text' },
+    ],
+  },
+  visitorLogs: {
+    label: 'nav_visitorLogs', endpoint: 'VisitorLogs', key: ['visitId'],
+    columns: [
+      { field: 'visitId', label: { tr: 'ID', en: 'ID' } },
+      { field: 'visitorName', label: { tr: 'Ziyaretçi', en: 'Visitor' } },
+      { field: 'visitDate', label: { tr: 'Tarih', en: 'Date' } },
+      { field: 'arrivalTime', label: { tr: 'Geliş', en: 'Arrival' } },
+      { field: 'departureTime', label: { tr: 'Ayrılış', en: 'Departure' } },
+      { field: 'plotNumber', label: { tr: 'Parsel', en: 'Plot' } },
+    ],
+    fields: [
+      { field: 'visitId', label: { tr: 'Ziyaret ID (ör. VIS011)', en: 'Visit ID' }, type: 'text', required: true, pk: true },
+      { field: 'visitorName', label: { tr: 'Ziyaretçi Adı', en: 'Visitor Name' }, type: 'text' },
+      { field: 'visitDate', label: { tr: 'Tarih', en: 'Date' }, type: 'date' },
+      { field: 'arrivalTime', label: { tr: 'Geliş Saati', en: 'Arrival Time' }, type: 'time' },
+      { field: 'departureTime', label: { tr: 'Ayrılış Saati', en: 'Departure Time' }, type: 'time' },
+      { field: 'purpose', label: { tr: 'Amaç', en: 'Purpose' }, type: 'text' },
+      { field: 'plotNumber', label: { tr: 'Parsel', en: 'Plot' }, type: 'refSelect', ref: { endpoint: 'GravePlots', value: 'plotNumber', label: 'status' } },
+    ],
+  },
+  users: {
+    label: 'nav_users', endpoint: 'Users', key: ['userId'],
+    columns: [
+      { field: 'userId', label: { tr: 'ID', en: 'ID' } },
+      { field: 'username', label: { tr: 'Kullanıcı Adı', en: 'Username' } },
+      { field: 'role', label: { tr: 'Rol', en: 'Role' }, badge: true },
+      { field: 'createdAt', label: { tr: 'Oluşturulma', en: 'Created' } },
+    ],
+    fields: [
+      { field: 'username', label: { tr: 'Kullanıcı Adı', en: 'Username' }, type: 'text', required: true, pk: true },
+      { field: 'password', label: { tr: 'Şifre (düzenlemede boş = değişmez)', en: 'Password (blank = unchanged on edit)' }, type: 'password' },
+      { field: 'role', label: { tr: 'Rol', en: 'Role' }, type: 'select', options: ['Admin', 'Public'] },
     ],
   },
 };
@@ -157,13 +354,14 @@ function badgeHtml(value) {
   let cls = 'bg-surface-container-high text-secondary border-outline-variant';
   if (v === 'Occupied') cls = 'bg-[#f1f5f9] text-[#475569] border-outline-variant';
   else if (v === 'Reserved') cls = 'bg-primary-fixed-dim text-on-primary-fixed border-primary-fixed';
+  else if (v === 'Maintenance') cls = 'bg-tertiary-fixed text-tertiary border-tertiary-fixed';
   return `<span class="px-3 py-1 rounded-full text-xs font-semibold border ${cls}">${fmt(v)}</span>`;
 }
 
 // --- Istatistik kartlari ---
 async function loadStats() {
   try {
-    const res = await fetch('/api/Stats?months=' + currentMonths);
+    const res = await fetch('/api/Stats?months=' + currentMonths, { headers: authHeaders() });
     const s = await res.json();
     const loc = LANG === 'tr' ? 'tr-TR' : 'en-US';
     el('statTotalPlots').textContent = s.totalPlots.toLocaleString(loc);
@@ -204,12 +402,12 @@ function drawChart(canvasId, type, data) {
 async function loadCharts() {
   if (typeof Chart === 'undefined') return;
   try {
-    const res = await fetch('/api/Stats/charts?months=' + currentMonths);
+    const res = await fetch('/api/Stats/charts?months=' + currentMonths, { headers: authHeaders() });
     const d = await res.json();
     const dark = document.documentElement.classList.contains('dark');
-    const green = dark ? '#6bfb9a' : '#4a7c59';
-    const greenDim = dark ? '#4de082' : '#8ecf9e';
-    const slate = '#8aa0c0', gold = dark ? '#dcc48e' : '#705c30', mid = '#c4a66a';
+    const green = dark ? '#6f9f78' : '#4a7c59';
+    const greenDim = dark ? '#8bbf94' : '#8ecf9e';
+    const slate = dark ? '#8894a8' : '#6b6358', gold = dark ? '#c2a56e' : '#705c30', mid = '#c4a66a';
     const loc = LANG === 'tr' ? 'tr-TR' : 'en-US';
 
     drawChart('chartZone', 'bar', {
@@ -254,7 +452,7 @@ function highlightNav(id) {
     a.classList.toggle('bg-primary-container', active);
     a.classList.toggle('text-on-primary-container', active);
     a.classList.toggle('font-bold', active);
-    a.classList.toggle('text-secondary', !active);
+    a.classList.toggle('text-white/80', !active);
   });
 }
 
@@ -282,6 +480,7 @@ function showHome() {
   el('tableView').classList.add('hidden');
   el('mapView').classList.add('hidden');
   el('calendarView').classList.add('hidden');
+  el('searchBox').style.display = 'none';
   el('btnAdd').style.display = 'none';
   el('pageTitle').textContent = t('nav_home');
   highlightNav('home');
@@ -298,6 +497,7 @@ function statusColor(s) {
   if (s === 'Occupied') return '#6b6358';
   if (s === 'Available') return '#4a7c59';
   if (s === 'Reserved') return '#705c30';
+  if (s === 'Maintenance') return '#c4a66a';
   return '#9ca3af';
 }
 function statusLabel(s) {
@@ -311,13 +511,14 @@ function showMap() {
   el('tableView').classList.add('hidden');
   el('calendarView').classList.add('hidden');
   el('mapView').classList.remove('hidden');
+  el('searchBox').style.display = 'none';
   el('btnAdd').style.display = 'none';
   el('pageTitle').textContent = t('nav_map');
   highlightNav('map');
 
   if (typeof L === 'undefined') return;
   if (!leafletMap) {
-    leafletMap = L.map('map').setView([37.05, 35.35], 13);
+    leafletMap = L.map('map').setView([36.8975, 30.6247], 17);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap', maxZoom: 19,
     }).addTo(leafletMap);
@@ -344,7 +545,8 @@ async function loadMapMarkers() {
       });
       m.bindPopup(
         `<b>${p.plotNumber}</b><br>${t('map_zone')}: ${p.zoneName || '—'}<br>` +
-        `${statusLabel(p.status)}<br>${t('map_occupant')}: ${p.occupant || t('map_empty')}`
+        `${statusLabel(p.status)}<br>${t('map_occupant')}: ${p.occupant || t('map_empty')}<br>` +
+        `<a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" rel="noopener" style="color:#4a7c59;font-weight:600;">${t('directions')} ↗</a>`
       );
       m.addTo(mapMarkers);
       pts.push([p.latitude, p.longitude]);
@@ -358,18 +560,32 @@ async function loadMapMarkers() {
 let calendarObj = null;
 
 async function fetchCalendarEvents() {
+  const events = [];
   try {
-    const res = await fetch('/api/FuneralServices/calendar');
-    const data = await res.json();
-    return data
-      .filter((e) => e.serviceDate)
-      .map((e) => ({
-        title: (e.deceasedName || e.serviceType || 'Servis'),
-        start: e.startTime ? `${e.serviceDate}T${e.startTime}` : e.serviceDate,
-        end: e.endTime ? `${e.serviceDate}T${e.endTime}` : undefined,
-        extendedProps: { serviceType: e.serviceType, attendees: e.expectedAttendees },
-      }));
-  } catch (e) { return []; }
+    const [fRes, vRes] = await Promise.all([
+      fetch('/api/FuneralServices/calendar', { headers: authHeaders() }),
+      fetch('/api/VisitorLogs', { headers: authHeaders() }),
+    ]);
+    const funerals = await fRes.json();
+    const visits = await vRes.json();
+
+    funerals.filter((e) => e.serviceDate).forEach((e) => events.push({
+      title: t('cal_funeral') + ': ' + (e.deceasedName || e.serviceType || ''),
+      start: e.startTime ? `${e.serviceDate}T${e.startTime}` : e.serviceDate,
+      end: e.endTime ? `${e.serviceDate}T${e.endTime}` : undefined,
+      color: '#4a7c59',
+      extendedProps: { kind: 'funeral', serviceType: e.serviceType, attendees: e.expectedAttendees },
+    }));
+
+    visits.filter((v) => v.visitDate).forEach((v) => events.push({
+      title: t('cal_visit') + ': ' + (v.visitorName || ''),
+      start: v.arrivalTime ? `${v.visitDate}T${v.arrivalTime}` : v.visitDate,
+      end: v.departureTime ? `${v.visitDate}T${v.departureTime}` : undefined,
+      color: '#705c30',
+      extendedProps: { kind: 'visit', purpose: v.purpose, plot: v.plotNumber },
+    }));
+  } catch (e) { /* sessiz */ }
+  return events;
 }
 
 async function showCalendar() {
@@ -378,6 +594,7 @@ async function showCalendar() {
   el('tableView').classList.add('hidden');
   el('mapView').classList.add('hidden');
   el('calendarView').classList.remove('hidden');
+  el('searchBox').style.display = 'none';
   el('btnAdd').style.display = 'none';
   el('pageTitle').textContent = t('nav_calendar');
   highlightNav('calendar');
@@ -395,7 +612,11 @@ async function showCalendar() {
       events,
       eventClick: (info) => {
         const p = info.event.extendedProps;
-        alert(`${info.event.title}\n${t('cal_service')}: ${p.serviceType || '—'}\n${t('cal_attendees')}: ${p.attendees ?? '—'}`);
+        if (p.kind === 'visit') {
+          alert(`${info.event.title}\n${t('cal_purpose')}: ${p.purpose || '—'}\n${t('cal_plot')}: ${p.plot || '—'}`);
+        } else {
+          alert(`${info.event.title}\n${t('cal_service')}: ${p.serviceType || '—'}\n${t('cal_attendees')}: ${p.attendees ?? '—'}`);
+        }
       },
     });
     calendarObj.render();
@@ -417,6 +638,8 @@ async function loadEntity(entityKey) {
   el('mapView').classList.add('hidden');
   el('calendarView').classList.add('hidden');
   el('tableView').classList.remove('hidden');
+  el('searchBox').style.display = '';
+  el('searchInput').value = '';
   highlightNav(entityKey);
 
   el('pageTitle').textContent = t(cfg.label);
@@ -481,12 +704,113 @@ function renderRows() {
 }
 
 // --- Modal / Form ---
+// Vefat etmemis kayitli kisileri getir (personSelect icin - artik kullanilmiyor ama dursun)
+async function fetchAvailablePersons() {
+  try {
+    const [pRes, dRes] = await Promise.all([
+      fetch('/api/People', { headers: authHeaders() }),
+      fetch('/api/DeceasedPeople', { headers: authHeaders() }),
+    ]);
+    const people = await pRes.json();
+    const deceased = await dRes.json();
+    const dset = new Set(deceased.map((d) => d.ssn));
+    return people.filter((p) => !dset.has(p.ssn));
+  } catch (e) { return []; }
+}
+
+// Bosta olan (bir vefat edene atanmamis) parselleri getir
+async function fetchAvailablePlots(currentVal) {
+  try {
+    const [gRes, dRes] = await Promise.all([
+      fetch('/api/GravePlots', { headers: authHeaders() }),
+      fetch('/api/DeceasedPeople', { headers: authHeaders() }),
+    ]);
+    const plots = await gRes.json();
+    const dec = await dRes.json();
+    const used = new Set(dec.map((d) => d.plotNumber).filter(Boolean));
+    return plots.map((p) => p.plotNumber).filter((pn) => !used.has(pn) || pn === currentVal);
+  } catch (e) { return []; }
+}
+
+// Kullanilmamis defin izinlerini getir
+async function fetchAvailablePermits(currentVal) {
+  try {
+    const [bRes, dRes] = await Promise.all([
+      fetch('/api/BurialPermits', { headers: authHeaders() }),
+      fetch('/api/DeceasedPeople', { headers: authHeaders() }),
+    ]);
+    const permits = await bRes.json();
+    const dec = await dRes.json();
+    const used = new Set(dec.map((d) => d.permitNumber).filter(Boolean));
+    return permits.map((p) => p.permitNumber).filter((pn) => !used.has(pn) || pn === currentVal);
+  } catch (e) { return []; }
+}
+
+// Bir referans kaydinin etiketini olustur (ör. "Ad Soyad")
+function buildRefLabel(d, ref) {
+  if (ref.labelFields) return ref.labelFields.map((k) => d[k] ?? '').join(' ').trim();
+  return ref.label ? (d[ref.label] ?? '') : '';
+}
+
+// Formdaki secici alanlar icin secenekleri hazirla
+async function prepareFormOptions(cfg, item) {
+  const fields = cfg.fields || [];
+  const types = fields.map((f) => f.type);
+  if (types.includes('personSelect')) window.__personOptions = await fetchAvailablePersons();
+  if (types.includes('plotSelect')) window.__plotOptions = await fetchAvailablePlots(item ? item.plotNumber : null);
+  if (types.includes('permitSelect')) window.__permitOptions = await fetchAvailablePermits(item ? item.permitNumber : null);
+
+  // refSelect alanlari: her birinin kaynak tablosunu cek
+  const refFields = fields.filter((f) => f.type === 'refSelect');
+  if (refFields.length) {
+    window.__refOptions = {};
+    await Promise.all(refFields.map(async (f) => {
+      try {
+        const res = await fetch('/api/' + f.ref.endpoint, { headers: authHeaders() });
+        const data = await res.json();
+        window.__refOptions[f.field] = data.map((d) => ({ value: d[f.ref.value], label: buildRefLabel(d, f.ref) }));
+      } catch (e) { window.__refOptions[f.field] = []; }
+    }));
+  }
+}
+
 function buildForm(cfg, item) {
   return cfg.fields.map((f) => {
     const val = item ? (item[f.field] ?? '') : '';
     const disabled = item && f.pk ? 'disabled' : '';
     let input;
-    if (f.type === 'select') {
+    if (f.type === 'personSelect') {
+      if (item) {
+        input = `<input id="f_${f.field}" type="text" value="${val}" disabled class="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg disabled:opacity-60"/>`;
+      } else {
+        const opts = window.__personOptions || [];
+        input = `<select id="f_${f.field}" class="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
+          <option value="">${t('select')}</option>
+          ${opts.map((o) => `<option value="${o.ssn}">${o.ssn} — ${(o.firstName || '')} ${(o.lastName || '')}${o.dateOfBirth ? ' (' + o.dateOfBirth + ')' : ''}</option>`).join('')}
+        </select>`;
+        if (!opts.length) input += `<p class="text-xs text-error mt-1">${t('no_available_person')}</p>`;
+      }
+    } else if (f.type === 'refSelect') {
+      if (item && f.pk) {
+        input = `<input id="f_${f.field}" type="text" value="${val}" disabled class="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg disabled:opacity-60"/>`;
+      } else {
+        const opts = (window.__refOptions && window.__refOptions[f.field]) || [];
+        const list = [...opts];
+        if (val && !list.some((o) => o.value === val)) list.unshift({ value: val, label: '' });
+        input = `<select id="f_${f.field}" ${f.required ? 'required' : ''} class="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
+          <option value="">${t('select')}</option>
+          ${list.map((o) => `<option value="${o.value}" ${o.value === val ? 'selected' : ''}>${o.value}${o.label ? (' — ' + o.label) : ''}</option>`).join('')}
+        </select>`;
+      }
+    } else if (f.type === 'plotSelect' || f.type === 'permitSelect') {
+      const opts = (f.type === 'plotSelect' ? window.__plotOptions : window.__permitOptions) || [];
+      const list = [...opts];
+      if (val && !list.includes(val)) list.unshift(val);
+      input = `<select id="f_${f.field}" class="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
+        <option value="">— (${t('select')})</option>
+        ${list.map((o) => `<option value="${o}" ${o === val ? 'selected' : ''}>${o}</option>`).join('')}
+      </select>`;
+    } else if (f.type === 'select') {
       input = `<select id="f_${f.field}" ${disabled} class="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer disabled:opacity-60">
         <option value="">${t('select')}</option>
         ${f.options.map((o) => `<option value="${o}" ${o === val ? 'selected' : ''}>${o}</option>`).join('')}
@@ -504,9 +828,10 @@ function buildForm(cfg, item) {
 
 let editingId = null;
 
-function openAdd() {
+async function openAdd() {
   const cfg = ENTITIES[currentKey];
   if (cfg.readOnly) return;
+  await prepareFormOptions(cfg, null);
   editingId = null;
   el('modalTitle').textContent = t('modal_add');
   el('formFields').innerHTML = buildForm(cfg, null);
@@ -514,10 +839,19 @@ function openAdd() {
   el('modal').classList.remove('hidden');
 }
 
-function openEdit(id) {
+async function openEdit(id) {
   const cfg = ENTITIES[currentKey];
-  const item = currentData.find((x) => keyPath(cfg, x) === id);
+  let item;
+  // writeEndpoint varsa (ör. Vefat Edenler) gercek kaydi cekip formu doldur
+  if (cfg.writeEndpoint) {
+    try {
+      const res = await fetch('/api/' + cfg.writeEndpoint + '/' + id, { headers: authHeaders() });
+      if (res.ok) item = await res.json();
+    } catch (e) { /* yoksay */ }
+  }
+  if (!item) item = currentData.find((x) => keyPath(cfg, x) === id);
   if (!item) return;
+  await prepareFormOptions(cfg, item);
   editingId = id;
   el('modalTitle').textContent = t('modal_edit');
   el('formFields').innerHTML = buildForm(cfg, item);
@@ -533,11 +867,13 @@ async function saveRecord() {
   cfg.fields.forEach((f) => {
     let v = el('f_' + f.field).value;
     if (v === '') { body[f.field] = null; return; }
+    if (f.type === 'time' && /^\d{2}:\d{2}$/.test(v)) v += ':00'; // TimeOnly icin saniye ekle
     body[f.field] = f.type === 'number' ? parseFloat(v) : v;
   });
 
   const isEdit = editingId !== null;
-  const url = '/api/' + cfg.endpoint + (isEdit ? '/' + editingId : '');
+  const ep = cfg.writeEndpoint || cfg.endpoint;
+  const url = '/api/' + ep + (isEdit ? '/' + editingId : '');
   const method = isEdit ? 'PUT' : 'POST';
 
   try {
@@ -560,7 +896,7 @@ async function deleteRow(id) {
   const cfg = ENTITIES[currentKey];
   if (!confirm(t('confirm_delete'))) return;
   try {
-    const res = await fetch('/api/' + cfg.endpoint + '/' + id, { method: 'DELETE', headers: authHeaders() });
+    const res = await fetch('/api/' + (cfg.writeEndpoint || cfg.endpoint) + '/' + id, { method: 'DELETE', headers: authHeaders() });
     if (res.status === 401 || res.status === 403) { alert(t('err_auth')); return; }
     if (!res.ok) {
       const txt = await res.text();
@@ -594,25 +930,22 @@ function exportExcel() {
   XLSX.writeFile(wb, cfg.endpoint + '.xlsx');
 }
 
-// jsPDF standart fontu Turkce ozel karakterleri desteklemez -> ASCII'ye cevir
-function pdfSafe(s) {
-  return (s == null ? '' : String(s))
-    .replace(/ş/g, 's').replace(/Ş/g, 'S').replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
-    .replace(/ı/g, 'i').replace(/İ/g, 'I').replace(/ç/g, 'c').replace(/Ç/g, 'C')
-    .replace(/ö/g, 'o').replace(/Ö/g, 'O').replace(/ü/g, 'u').replace(/Ü/g, 'U');
-}
-
-// Odeme makbuzu PDF olustur
+// Odeme makbuzu PDF olustur (gomulu Turkce font ile)
 function downloadReceipt(id) {
   const p = currentData.find((x) => x.receiptNo === id);
   if (!p || !window.jspdf) return;
   const tr = LANG === 'tr';
   const doc = new window.jspdf.jsPDF();
 
+  // Gomulu Turkce destekli font (yuklendiyse)
+  const hasTrFont = (doc.getFontList && doc.getFontList().Liberation);
+  const FONT = hasTrFont ? 'Liberation' : 'helvetica';
+  doc.setFont(FONT, 'normal');
+
   doc.setFontSize(16);
-  doc.text(pdfSafe(tr ? 'Mezarlik Yonetim Sistemi' : 'Cemetery Management System'), 20, 22);
+  doc.text(tr ? 'Mezarlık Yönetim Sistemi' : 'Cemetery Management System', 20, 22);
   doc.setFontSize(12);
-  doc.text(pdfSafe(tr ? 'Odeme Makbuzu' : 'Payment Receipt'), 20, 32);
+  doc.text(tr ? 'Ödeme Makbuzu' : 'Payment Receipt', 20, 32);
   doc.setLineWidth(0.3);
   doc.line(20, 36, 190, 36);
 
@@ -620,7 +953,7 @@ function downloadReceipt(id) {
     [tr ? 'Makbuz No' : 'Receipt No', p.receiptNo],
     [tr ? 'Tutar' : 'Amount', (p.amount ?? '') + ' ' + (p.currency || '')],
     [tr ? 'Tarih' : 'Date', p.paymentDate || ''],
-    [tr ? 'Odeme Yontemi' : 'Method', p.paymentMethod || ''],
+    [tr ? 'Ödeme Yöntemi' : 'Method', p.paymentMethod || ''],
     [tr ? 'Sahip SSN' : 'Owner SSN', p.ownerSsn || ''],
     [tr ? 'Fatura Adresi' : 'Billing Address', p.billingAddress || ''],
   ];
@@ -628,16 +961,16 @@ function downloadReceipt(id) {
   let y = 50;
   doc.setFontSize(11);
   rows.forEach(([k, v]) => {
-    doc.setFont(undefined, 'bold');
-    doc.text(pdfSafe(k) + ':', 20, y);
-    doc.setFont(undefined, 'normal');
-    doc.text(pdfSafe(v), 75, y);
+    doc.setFont(FONT, 'bold');
+    doc.text(k + ':', 20, y);
+    doc.setFont(FONT, 'normal');
+    doc.text(String(v ?? ''), 75, y);
     y += 11;
   });
 
   doc.setFontSize(9);
-  doc.text(pdfSafe((tr ? 'Olusturulma: ' : 'Generated: ') +
-    new Date().toLocaleString(tr ? 'tr-TR' : 'en-US')), 20, y + 12);
+  doc.text((tr ? 'Oluşturulma: ' : 'Generated: ') +
+    new Date().toLocaleString(tr ? 'tr-TR' : 'en-US'), 20, y + 12);
 
   doc.save('makbuz_' + p.receiptNo + '.pdf');
 }
@@ -671,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyI18n();
   el('username').textContent = localStorage.getItem('username') || 'admin';
   document.querySelectorAll('nav a[data-entity]').forEach((a) => {
-    a.addEventListener('click', (e) => { e.preventDefault(); loadEntity(a.dataset.entity); });
+    a.addEventListener('click', (e) => { e.preventDefault(); loadEntity(a.dataset.entity); closeSidebar(); });
   });
   document.querySelectorAll('nav a[data-view]').forEach((a) => {
     a.addEventListener('click', (e) => {
@@ -679,6 +1012,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (a.dataset.view === 'map') showMap();
       else if (a.dataset.view === 'calendar') showCalendar();
       else showHome();
+      closeSidebar();
     });
   });
   el('searchInput').addEventListener('input', renderRows);
