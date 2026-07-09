@@ -12,8 +12,8 @@ function logout() {
   location.href = 'login.html';
 }
 
-// Iki dilli etiket secici
-const L = (o) => (o && (o[LANG] || o.tr)) || '';
+// Iki dilli etiket secici (Leaflet'in global L'siyle cakismasin diye 'lbl')
+const lbl = (o) => (o && (o[LANG] || o.tr)) || '';
 
 // --- Entity yapilandirmalari ---
 // label: i18n anahtari | key: birincil anahtar alan(lar)i | readOnly: sadece okuma
@@ -255,12 +255,131 @@ function showHome() {
   currentView = 'home';
   el('homeView').classList.remove('hidden');
   el('tableView').classList.add('hidden');
+  el('mapView').classList.add('hidden');
+  el('calendarView').classList.add('hidden');
   el('btnAdd').style.display = 'none';
   el('pageTitle').textContent = t('nav_home');
   highlightNav('home');
   highlightPeriod();
   loadStats();
   loadCharts();
+}
+
+// --- Harita gorunumu (Leaflet) ---
+let leafletMap = null;
+let mapMarkers = null;
+
+function statusColor(s) {
+  if (s === 'Occupied') return '#6b6358';
+  if (s === 'Available') return '#4a7c59';
+  if (s === 'Reserved') return '#705c30';
+  return '#9ca3af';
+}
+function statusLabel(s) {
+  const k = 'st_' + s;
+  return t(k) === k ? (s || '—') : t(k);
+}
+
+function showMap() {
+  currentView = 'map';
+  el('homeView').classList.add('hidden');
+  el('tableView').classList.add('hidden');
+  el('calendarView').classList.add('hidden');
+  el('mapView').classList.remove('hidden');
+  el('btnAdd').style.display = 'none';
+  el('pageTitle').textContent = t('nav_map');
+  highlightNav('map');
+
+  if (typeof L === 'undefined') return;
+  if (!leafletMap) {
+    leafletMap = L.map('map').setView([37.05, 35.35], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap', maxZoom: 19,
+    }).addTo(leafletMap);
+    mapMarkers = L.layerGroup().addTo(leafletMap);
+  }
+  // Kutu yeni gorunur oldugu icin boyutu birkac kez tazele (gri kalmasin)
+  requestAnimationFrame(() => leafletMap.invalidateSize());
+  setTimeout(() => leafletMap.invalidateSize(), 200);
+  setTimeout(() => leafletMap.invalidateSize(), 600);
+  loadMapMarkers();
+}
+
+async function loadMapMarkers() {
+  if (!mapMarkers) return;
+  try {
+    const res = await fetch('/api/GravePlots/map');
+    const plots = await res.json();
+    mapMarkers.clearLayers();
+    const pts = [];
+    plots.forEach((p) => {
+      if (p.latitude == null || p.longitude == null) return;
+      const m = L.circleMarker([p.latitude, p.longitude], {
+        radius: 9, color: '#fff', weight: 2, fillColor: statusColor(p.status), fillOpacity: 0.9,
+      });
+      m.bindPopup(
+        `<b>${p.plotNumber}</b><br>${t('map_zone')}: ${p.zoneName || '—'}<br>` +
+        `${statusLabel(p.status)}<br>${t('map_occupant')}: ${p.occupant || t('map_empty')}`
+      );
+      m.addTo(mapMarkers);
+      pts.push([p.latitude, p.longitude]);
+    });
+    if (pts.length) leafletMap.fitBounds(pts, { padding: [40, 40], maxZoom: 15 });
+    leafletMap.invalidateSize();
+  } catch (e) { /* sessiz */ }
+}
+
+// --- Cenaze takvimi (FullCalendar) ---
+let calendarObj = null;
+
+async function fetchCalendarEvents() {
+  try {
+    const res = await fetch('/api/FuneralServices/calendar');
+    const data = await res.json();
+    return data
+      .filter((e) => e.serviceDate)
+      .map((e) => ({
+        title: (e.deceasedName || e.serviceType || 'Servis'),
+        start: e.startTime ? `${e.serviceDate}T${e.startTime}` : e.serviceDate,
+        end: e.endTime ? `${e.serviceDate}T${e.endTime}` : undefined,
+        extendedProps: { serviceType: e.serviceType, attendees: e.expectedAttendees },
+      }));
+  } catch (e) { return []; }
+}
+
+async function showCalendar() {
+  currentView = 'calendar';
+  el('homeView').classList.add('hidden');
+  el('tableView').classList.add('hidden');
+  el('mapView').classList.add('hidden');
+  el('calendarView').classList.remove('hidden');
+  el('btnAdd').style.display = 'none';
+  el('pageTitle').textContent = t('nav_calendar');
+  highlightNav('calendar');
+
+  if (typeof FullCalendar === 'undefined') return;
+  const events = await fetchCalendarEvents();
+
+  if (!calendarObj) {
+    calendarObj = new FullCalendar.Calendar(el('calendar'), {
+      initialView: 'dayGridMonth',
+      locale: LANG,
+      initialDate: events.length ? events[0].start.slice(0, 10) : undefined,
+      headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
+      height: 640,
+      events,
+      eventClick: (info) => {
+        const p = info.event.extendedProps;
+        alert(`${info.event.title}\n${t('cal_service')}: ${p.serviceType || '—'}\n${t('cal_attendees')}: ${p.attendees ?? '—'}`);
+      },
+    });
+    calendarObj.render();
+  } else {
+    calendarObj.setOption('locale', LANG);
+    calendarObj.removeAllEvents();
+    calendarObj.addEventSource(events);
+    calendarObj.updateSize();
+  }
 }
 
 // --- Tablo gorunumu ---
@@ -270,6 +389,8 @@ async function loadEntity(entityKey) {
   const cfg = ENTITIES[entityKey];
 
   el('homeView').classList.add('hidden');
+  el('mapView').classList.add('hidden');
+  el('calendarView').classList.add('hidden');
   el('tableView').classList.remove('hidden');
   highlightNav(entityKey);
 
@@ -278,7 +399,7 @@ async function loadEntity(entityKey) {
   el('btnAdd').style.display = cfg.readOnly ? 'none' : 'flex';
 
   el('tableHead').innerHTML =
-    cfg.columns.map((c) => `<th class="py-4 px-6 font-semibold">${L(c.label)}</th>`).join('') +
+    cfg.columns.map((c) => `<th class="py-4 px-6 font-semibold">${lbl(c.label)}</th>`).join('') +
     (cfg.readOnly ? '' : `<th class="py-4 px-6 font-semibold text-right">${t('actions')}</th>`);
 
   el('tableBody').innerHTML = `<tr><td class="py-8 px-6 text-center text-secondary" colspan="99">${t('loading')}</td></tr>`;
@@ -345,7 +466,7 @@ function buildForm(cfg, item) {
         class="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60" step="any"/>`;
     }
     return `<div class="flex flex-col gap-2">
-      <label class="text-xs font-semibold tracking-wide text-on-surface" for="f_${f.field}">${L(f.label)}</label>
+      <label class="text-xs font-semibold tracking-wide text-on-surface" for="f_${f.field}">${lbl(f.label)}</label>
       ${input}
     </div>`;
   }).join('');
@@ -439,6 +560,8 @@ function friendlyError(text, status) {
 // Dil degisince aktif gorunumu yenile
 window.onLangChange = () => {
   if (currentView === 'home') showHome();
+  else if (currentView === 'map') showMap();
+  else if (currentView === 'calendar') showCalendar();
   else loadEntity(currentView);
 };
 
@@ -449,8 +572,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('nav a[data-entity]').forEach((a) => {
     a.addEventListener('click', (e) => { e.preventDefault(); loadEntity(a.dataset.entity); });
   });
-  document.querySelectorAll('nav a[data-view="home"]').forEach((a) => {
-    a.addEventListener('click', (e) => { e.preventDefault(); showHome(); });
+  document.querySelectorAll('nav a[data-view]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (a.dataset.view === 'map') showMap();
+      else if (a.dataset.view === 'calendar') showCalendar();
+      else showHome();
+    });
   });
   el('searchInput').addEventListener('input', renderRows);
   el('btnAdd').addEventListener('click', openAdd);

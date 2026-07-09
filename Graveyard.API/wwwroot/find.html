@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html class="light" lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mezar Yeri Sorgulama</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script>tailwind.config={darkMode:"class",theme:{extend:{colors:{"primary-fixed":"#c8e8d0","primary-container":"#78a886","primary":"#4a7c59","on-primary":"#ffffff","secondary":"#6b6358","on-surface-variant":"#4a4e4a","outline":"#74796e","outline-variant":"#c4c8bc","on-surface":"#2e3230","surface-container-lowest":"#ffffff","surface-container-low":"#f5f1ea","surface-container":"#f0ece4","surface-container-high":"#eae6de","surface-bright":"#faf6f0","background":"#faf6f0","surface":"#faf6f0","error":"#b83230"}}}};</script>
+<style>body{font-family:'Inter',sans-serif}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400}</style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+
+<!-- Header -->
+<header class="bg-primary text-on-primary">
+  <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">account_balance</span>
+      <h1 class="text-lg font-bold" data-i18n="pub_title">Mezar Yeri Sorgulama</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="relative">
+        <button id="langBtn" onclick="toggleLangMenu()" class="flex items-center gap-1 px-3 py-2 bg-white/15 rounded-full text-xs font-semibold hover:bg-white/25 transition-colors">
+          <span class="material-symbols-outlined text-[16px]">translate</span><span id="langCurrent">Türkçe</span>
+          <span class="material-symbols-outlined text-[16px]">expand_more</span>
+        </button>
+        <div id="langMenu" class="hidden absolute right-0 mt-1 w-36 bg-surface-container-lowest text-on-surface border border-outline-variant rounded-lg shadow-lg overflow-hidden z-[500]">
+          <button data-lang-opt="tr" onclick="chooseLang('tr')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-container-low flex items-center gap-2"><img src="https://flagcdn.com/w40/tr.png" alt="TR" class="w-5 h-5 rounded-full object-cover"/>Türkçe</button>
+          <button data-lang-opt="en" onclick="chooseLang('en')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-container-low flex items-center gap-2"><img src="https://flagcdn.com/w40/gb.png" alt="EN" class="w-5 h-5 rounded-full object-cover"/>English</button>
+        </div>
+      </div>
+      <a href="login.html" class="flex items-center gap-1 px-3 py-2 bg-white/15 rounded-full text-xs font-semibold hover:bg-white/25 transition-colors">
+        <span class="material-symbols-outlined text-[16px]">lock</span><span data-i18n="pub_admin">Yönetici Girişi</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-6 py-8">
+  <p class="text-on-surface-variant mb-4" data-i18n="pub_subtitle">Vefat eden yakınınızın adını girerek mezar konumunu bulun.</p>
+  <div class="flex gap-2 mb-6">
+    <div class="relative flex-1">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+      <input id="q" type="text" data-i18n-ph="pub_search_ph" placeholder="Ad soyad ile arayın..." class="w-full pl-11 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-full focus:outline-none focus:ring-2 focus:ring-primary"/>
+    </div>
+    <button id="searchBtn" class="px-6 py-3 bg-primary text-on-primary rounded-full font-semibold hover:opacity-90 transition-opacity" data-i18n="pub_search_btn">Ara</button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div id="results" class="space-y-3"></div>
+    <div id="map" class="w-full rounded-xl border border-outline-variant z-0" style="height:420px"></div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="i18n.js"></script>
+<script>
+  let allPlots = [];
+  let map, markers;
+
+  function initMap() {
+    map = L.map('map').setView([37.05, 35.35], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
+    markers = L.layerGroup().addTo(map);
+    setTimeout(() => map.invalidateSize(), 200);
+  }
+
+  async function loadData() {
+    try {
+      const res = await fetch('/api/GravePlots/map');
+      const data = await res.json();
+      // sadece yatan kisi olan parseller
+      allPlots = data.filter(p => p.occupant && p.occupant.trim());
+    } catch (e) { allPlots = []; }
+    render();
+  }
+
+  function render() {
+    const q = document.getElementById('q').value.trim().toLowerCase();
+    const box = document.getElementById('results');
+    markers.clearLayers();
+
+    if (!q) {
+      box.innerHTML = `<div class="text-on-surface-variant text-center py-10">${t('pub_hint')}</div>`;
+      return;
+    }
+
+    const matches = allPlots.filter(p => p.occupant.toLowerCase().includes(q));
+    if (!matches.length) {
+      box.innerHTML = `<div class="text-on-surface-variant text-center py-10">${t('pub_no_result')}</div>`;
+      return;
+    }
+
+    const pts = [];
+    box.innerHTML = matches.map((p, i) => {
+      if (p.latitude != null && p.longitude != null) {
+        const mk = L.marker([p.latitude, p.longitude]).addTo(markers);
+        mk.bindPopup(`<b>${p.occupant}</b><br>${t('pub_plot')}: ${p.plotNumber}<br>${t('map_zone')}: ${p.zoneName || '—'}`);
+        pts.push([p.latitude, p.longitude]);
+      }
+      return `<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-start justify-between gap-3">
+        <div>
+          <div class="font-semibold text-lg">${p.occupant}</div>
+          <div class="text-sm text-on-surface-variant mt-1">${t('map_zone')}: ${p.zoneName || '—'} · ${t('pub_plot')}: ${p.plotNumber}</div>
+        </div>
+        <button onclick="focusPlot(${p.latitude},${p.longitude})" class="shrink-0 flex items-center gap-1 px-3 py-2 bg-primary-fixed text-primary rounded-full text-xs font-semibold hover:bg-primary-container hover:text-on-primary transition-colors">
+          <span class="material-symbols-outlined text-[16px]">location_on</span><span data-nolang>${t('pub_show_map')}</span>
+        </button>
+      </div>`;
+    }).join('');
+
+    if (pts.length) map.fitBounds(pts, { padding: [40, 40], maxZoom: 16 });
+  }
+
+  function focusPlot(lat, lng) {
+    if (lat == null || lng == null) return;
+    map.setView([lat, lng], 17);
+    map.invalidateSize();
+    window.scrollTo({ top: document.getElementById('map').offsetTop - 80, behavior: 'smooth' });
+  }
+
+  window.onLangChange = render;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    applyI18n();
+    initMap();
+    loadData();
+    document.getElementById('searchBtn').addEventListener('click', render);
+    document.getElementById('q').addEventListener('input', render);
+  });
+</script>
+</body>
+</html>

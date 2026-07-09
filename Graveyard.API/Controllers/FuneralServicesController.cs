@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Graveyard.API.Data;
+using Graveyard.API.Dtos;
 using Graveyard.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,22 @@ public class FuneralServicesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<FuneralService>>> GetAll()
         => await _context.FuneralServices.ToListAsync();
+
+    // GET: api/FuneralServices/calendar  -> takvim olaylari (vefat eden adiyla)
+    [HttpGet("calendar")]
+    public async Task<ActionResult<IEnumerable<CalendarEventDto>>> Calendar()
+        => await _context.FuneralServices
+            .Select(s => new CalendarEventDto(
+                s.ServiceId,
+                s.DeceasedSsnNavigation != null
+                    ? s.DeceasedSsnNavigation.SsnNavigation.FirstName + " " + s.DeceasedSsnNavigation.SsnNavigation.LastName
+                    : null,
+                s.ServiceType,
+                s.ServiceDate,
+                s.StartTime,
+                s.EndTime,
+                s.ExpectedAttendees))
+            .ToListAsync();
 
     // GET: api/FuneralServices/{id}
     [HttpGet("{id}")]

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Graveyard.API.Data;
+using Graveyard.API.Dtos;
 using Graveyard.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,21 @@ public class GravePlotsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(plotNumber))
             query = query.Where(p => p.PlotNumber.Contains(plotNumber));
         return await query.ToListAsync();
+    }
+
+    // GET: api/GravePlots/map  -> harita icin koordinatli parseller (herkese acik)
+    [HttpGet("map")]
+    public async Task<ActionResult<IEnumerable<MapPlotDto>>> Map()
+    {
+        return await _context.GravePlots
+            .Where(p => p.Latitude != null && p.Longitude != null)
+            .Select(p => new MapPlotDto(
+                p.PlotNumber, p.Latitude, p.Longitude, p.Status,
+                p.Zone!.Name,
+                p.DeceasedPerson != null
+                    ? p.DeceasedPerson.SsnNavigation.FirstName + " " + p.DeceasedPerson.SsnNavigation.LastName
+                    : null))
+            .ToListAsync();
     }
 
     // POST: api/GravePlots  -> yeni mezar yeri ekle
