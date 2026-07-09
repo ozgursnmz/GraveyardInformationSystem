@@ -1,0 +1,81 @@
+using Graveyard.API.Data;
+using Graveyard.API.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace Graveyard.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class GravePlotsController : ControllerBase
+{
+    private readonly GraveyardDbContext _context;
+    public GravePlotsController(GraveyardDbContext context) => _context = context;
+
+    // GET: api/GravePlots  -> tum mezar yerleri
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<GravePlot>>> GetAll()
+        => await _context.GravePlots.ToListAsync();
+
+    // GET: api/GravePlots/PLT001  -> tek mezar yeri
+    [HttpGet("{id}")]
+    public async Task<ActionResult<GravePlot>> GetById(string id)
+    {
+        var plot = await _context.GravePlots.FindAsync(id);
+        if (plot == null) return NotFound();
+        return plot;
+    }
+
+    // GET: api/GravePlots/search?status=Available&zoneID=Z001&plotNumber=PLT0  -> filtreli arama
+    [HttpGet("search")]
+    public async Task<ActionResult<IEnumerable<GravePlot>>> Search(
+        string? status, string? zoneID, string? plotNumber)
+    {
+        var query = _context.GravePlots.AsQueryable();
+        if (!string.IsNullOrEmpty(status))
+            query = query.Where(p => p.Status == status);
+        if (!string.IsNullOrEmpty(zoneID))
+            query = query.Where(p => p.ZoneId == zoneID);
+        if (!string.IsNullOrWhiteSpace(plotNumber))
+            query = query.Where(p => p.PlotNumber.Contains(plotNumber));
+        return await query.ToListAsync();
+    }
+
+    // POST: api/GravePlots  -> yeni mezar yeri ekle
+    [HttpPost]
+    public async Task<ActionResult<GravePlot>> Create(GravePlot plot)
+    {
+        _context.GravePlots.Add(plot);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetById), new { id = plot.PlotNumber }, plot);
+    }
+
+    // PUT: api/GravePlots/PLT001  -> guncelle
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(string id, GravePlot plot)
+    {
+        if (id != plot.PlotNumber)
+            return BadRequest("URL'deki id ile govdedeki PlotNumber uyusmuyor.");
+
+        _context.Entry(plot).State = EntityState.Modified;
+        try { await _context.SaveChangesAsync(); }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!await _context.GravePlots.AnyAsync(p => p.PlotNumber == id))
+                return NotFound();
+            throw;
+        }
+        return NoContent();
+    }
+
+    // DELETE: api/GravePlots/PLT001  -> sil
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var plot = await _context.GravePlots.FindAsync(id);
+        if (plot == null) return NotFound();
+        _context.GravePlots.Remove(plot);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+}

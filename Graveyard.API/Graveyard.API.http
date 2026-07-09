@@ -1,0 +1,6 @@
+@Graveyard.API_HostAddress = http://localhost:5208
+
+GET {{Graveyard.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
