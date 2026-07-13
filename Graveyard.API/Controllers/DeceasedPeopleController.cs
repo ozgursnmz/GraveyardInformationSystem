@@ -16,6 +16,21 @@ public class DeceasedPeopleController : ControllerBase
 
     // ---- Birlesik defin islemleri (kisi + vefat tek adimda) ----
 
+    // GET: api/DeceasedPeople/recent -> son vefat edenler (halka acik, sadece ad+konum+tarih)
+    [AllowAnonymous]
+    [HttpGet("recent")]
+    public async Task<ActionResult<IEnumerable<RecentDeathDto>>> Recent()
+        => await _context.DeceasedPeople
+            .Where(d => d.DateOfDeath != null)
+            .OrderByDescending(d => d.DateOfDeath)
+            .Take(12)
+            .Select(d => new RecentDeathDto(
+                d.SsnNavigation.FirstName + " " + d.SsnNavigation.LastName,
+                d.DateOfDeath,
+                d.PlotNumberNavigation != null ? d.PlotNumberNavigation.Zone!.Name : null,
+                d.PlotNumber))
+            .ToListAsync();
+
     // GET: api/DeceasedPeople/full/{ssn} -> duzenleme icin birlesik veri
     [HttpGet("full/{ssn}")]
     public async Task<ActionResult<CreateBurialDto>> GetFull(string ssn)

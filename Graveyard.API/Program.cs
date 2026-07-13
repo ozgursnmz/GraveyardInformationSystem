@@ -79,14 +79,47 @@ builder.Services.AddCors(o =>
 
 var app = builder.Build();
 
+// Global hata yonetimi: stack trace yerine temiz JSON dondur.
+// DB kisit hatalarinda mesaji korur (frontend anlamli mesaja cevirir), digerlerinde genel mesaj.
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (DbUpdateException dbEx)
+    {
+        context.Response.StatusCode = 400;
+        context.Response.ContentType = "application/json; charset=utf-8";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = dbEx.InnerException?.Message ?? "Veritabanı işlemi başarısız.",
+            status = 400
+        });
+    }
+    catch (Exception)
+    {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json; charset=utf-8";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "Beklenmeyen bir hata oluştu.",
+            status = 500
+        });
+    }
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Statik frontend (wwwroot): index.html varsayilan sayfa
-app.UseDefaultFiles();
+// Statik frontend (wwwroot): acilis sayfasi = halka acik mezar sorgulama (find.html)
+var defaultFiles = new DefaultFilesOptions();
+defaultFiles.DefaultFileNames.Clear();
+defaultFiles.DefaultFileNames.Add("find.html");
+app.UseDefaultFiles(defaultFiles);
 app.UseStaticFiles();
 
 app.UseCors("AllowAll");

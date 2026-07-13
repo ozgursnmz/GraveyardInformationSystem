@@ -31,8 +31,8 @@
           <button data-lang-opt="en" onclick="chooseLang('en')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-container-low flex items-center gap-2"><img src="https://flagcdn.com/w40/gb.png" alt="EN" class="w-5 h-5 rounded-full object-cover"/>English</button>
         </div>
       </div>
-      <a href="login.html" class="flex items-center gap-1 px-3 py-2 bg-white/15 rounded-full text-xs font-semibold hover:bg-white/25 transition-colors">
-        <span class="material-symbols-outlined text-[16px]">lock</span><span data-i18n="pub_admin">Yönetici Girişi</span>
+      <a href="login.html" class="flex items-center gap-1 px-4 py-2 bg-white text-primary rounded-full text-xs font-bold hover:opacity-90 transition-opacity">
+        <span class="material-symbols-outlined text-[16px]">login</span><span data-i18n="pub_admin">Giriş Yap</span>
       </a>
     </div>
   </div>
@@ -43,9 +43,18 @@
   <div class="flex gap-2 mb-6 flex-wrap">
     <div class="relative flex-1 min-w-[200px]">
       <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-      <input id="q" type="text" data-i18n-ph="pub_search_ph" placeholder="Ad soyad ile arayın..." class="w-full pl-11 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-full focus:outline-none focus:ring-2 focus:ring-primary"/>
+      <input id="q" type="text" data-i18n-ph="pub_search_ph" placeholder="Ad soyad ile arayın..." class="w-full pl-11 pr-10 py-3 bg-surface-container-lowest border border-outline-variant rounded-full focus:outline-none focus:ring-2 focus:ring-primary"/>
+      <button id="qClear" type="button" onclick="clearSearch()" aria-label="Temizle" class="absolute right-2.5 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors">
+        <span class="material-symbols-outlined text-[18px] leading-none">cancel</span>
+      </button>
     </div>
-    <input id="qYear" type="number" data-i18n-ph="pub_year" placeholder="Ölüm Yılı" class="w-36 px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-full focus:outline-none focus:ring-2 focus:ring-primary"/>
+    <div class="relative">
+      <input id="qYear" type="text" inputmode="numeric" maxlength="4" data-i18n-ph="pub_year" placeholder="Ölüm Yılı" class="w-40 pl-4 pr-9 py-3 bg-surface-container-lowest border border-outline-variant rounded-full focus:outline-none focus:ring-2 focus:ring-primary"/>
+      <button id="qYearBtn" type="button" onclick="toggleYearMenu()" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined text-[18px]">expand_more</span>
+      </button>
+      <div id="qYearMenu" class="hidden absolute right-0 mt-1 w-40 max-h-60 overflow-y-auto bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-[600]"></div>
+    </div>
     <button id="searchBtn" class="px-6 py-3 bg-primary text-on-primary rounded-full font-semibold hover:opacity-90 transition-opacity" data-i18n="pub_search_btn">Ara</button>
   </div>
 
@@ -53,6 +62,12 @@
     <div id="results" class="space-y-3"></div>
     <div id="map" class="w-full rounded-xl border border-outline-variant z-0" style="height:420px"></div>
   </div>
+
+  <!-- Vefat ilanlari -->
+  <section class="mt-10">
+    <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-primary">campaign</span><span data-i18n="pub_announcements">Son Vefat Edenler</span></h2>
+    <div id="announcements" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+  </section>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -75,6 +90,37 @@
       // sadece yatan kisi olan parseller
       allPlots = data.filter(p => p.occupant && p.occupant.trim());
     } catch (e) { allPlots = []; }
+    buildYearMenu();
+    render();
+  }
+
+  // Yil acilir menusu (kutuya yazma + listeden secme birlikte)
+  function buildYearMenu() {
+    const yrs = allPlots.map(p => p.deathYear).filter(Boolean);
+    const minY = yrs.length ? Math.min(...yrs) : 2020;
+    const maxY = Math.max(new Date().getFullYear(), yrs.length ? Math.max(...yrs) : 2026);
+    let html = `<button type="button" onclick="pickYear('')" class="w-full text-left px-4 py-2 text-sm hover:bg-surface-container-low">${t('period_all')}</button>`;
+    for (let y = maxY; y >= minY; y--) {
+      html += `<button type="button" onclick="pickYear('${y}')" class="w-full text-left px-4 py-2 text-sm hover:bg-surface-container-low">${y}</button>`;
+    }
+    document.getElementById('qYearMenu').innerHTML = html;
+  }
+
+  function toggleYearMenu() {
+    const m = document.getElementById('qYearMenu');
+    if (!m.innerHTML) buildYearMenu();
+    m.classList.toggle('hidden');
+  }
+
+  function pickYear(y) {
+    document.getElementById('qYear').value = y;
+    document.getElementById('qYearMenu').classList.add('hidden');
+    render();
+  }
+
+  function clearSearch() {
+    document.getElementById('q').value = '';
+    document.getElementById('q').focus();
     render();
   }
 
@@ -104,16 +150,13 @@
         mk.bindPopup(`<b>${p.occupant}</b><br>${t('pub_plot')}: ${p.plotNumber}<br>${t('map_zone')}: ${p.zoneName || '—'}<br><a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" rel="noopener" style="color:#4a7c59;font-weight:600;">${t('directions')} ↗</a>`);
         pts.push([p.latitude, p.longitude]);
       }
-      return `<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-start justify-between gap-3">
+      return `<div onclick="focusPlot(${p.latitude},${p.longitude})" class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-start justify-between gap-3 cursor-pointer hover:border-primary hover:shadow-sm transition-all">
         <div>
-          <div class="font-semibold text-lg">${p.occupant}</div>
+          <div class="font-semibold text-lg flex items-center gap-1"><span class="material-symbols-outlined text-[18px] text-primary">location_on</span>${p.occupant}</div>
           <div class="text-sm text-on-surface-variant mt-1">${t('map_zone')}: ${p.zoneName || '—'} · ${t('pub_plot')}: ${p.plotNumber}${p.deathYear ? ' · ' + p.deathYear : ''}</div>
         </div>
-        <div class="shrink-0 flex flex-col gap-2">
-          <button onclick="focusPlot(${p.latitude},${p.longitude})" class="flex items-center justify-center gap-1 px-3 py-2 bg-primary-fixed text-primary rounded-full text-xs font-semibold hover:bg-primary-container hover:text-on-primary transition-colors">
-            <span class="material-symbols-outlined text-[16px]">location_on</span><span>${t('pub_show_map')}</span>
-          </button>
-          <a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" rel="noopener" class="flex items-center justify-center gap-1 px-3 py-2 bg-primary text-on-primary rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
+        <div class="shrink-0">
+          <a onclick="event.stopPropagation()" href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" rel="noopener" class="flex items-center justify-center gap-1 px-3 py-2 bg-primary text-on-primary rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
             <span class="material-symbols-outlined text-[16px]">directions</span><span>${t('directions')}</span>
           </a>
         </div>
@@ -130,15 +173,57 @@
     window.scrollTo({ top: document.getElementById('map').offsetTop - 80, behavior: 'smooth' });
   }
 
-  window.onLangChange = render;
+  // Vefat ilanlari
+  let announcements = [];
+  async function loadAnnouncements() {
+    try {
+      const res = await fetch('/api/DeceasedPeople/recent');
+      announcements = await res.json();
+    } catch (e) { announcements = []; }
+    renderAnnouncements();
+  }
+  function renderAnnouncements() {
+    const box = document.getElementById('announcements');
+    const loc = LANG === 'tr' ? 'tr-TR' : 'en-US';
+    box.innerHTML = announcements.map(a => `
+      <div onclick="focusAnnouncement('${a.plotNumber}')" class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 cursor-pointer hover:border-primary hover:shadow-sm transition-all">
+        <div class="font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-primary">location_on</span>${a.name || '—'}</div>
+        <div class="text-sm text-on-surface-variant mt-1">${a.dateOfDeath ? new Date(a.dateOfDeath).toLocaleDateString(loc, { day: '2-digit', month: 'long', year: 'numeric' }) : ''}</div>
+        <div class="text-xs text-on-surface-variant mt-1">${a.zoneName || '—'}${a.plotNumber ? ' · ' + a.plotNumber : ''}</div>
+      </div>`).join('');
+  }
+
+  // Ilana tiklaninca haritada o mezarin konumuna git
+  function focusAnnouncement(plotNumber) {
+    const p = allPlots.find(x => x.plotNumber === plotNumber);
+    if (!p || p.latitude == null || p.longitude == null) return;
+    markers.clearLayers();
+    const mk = L.marker([p.latitude, p.longitude]).addTo(markers);
+    mk.bindPopup(`<b>${p.occupant || ''}</b><br>${t('pub_plot')}: ${p.plotNumber}<br>${t('map_zone')}: ${p.zoneName || '—'}<br><a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" rel="noopener" style="color:#4a7c59;font-weight:600;">${t('directions')} ↗</a>`).openPopup();
+    focusPlot(p.latitude, p.longitude);
+  }
+
+  window.onLangChange = () => { render(); renderAnnouncements(); buildYearMenu(); };
 
   document.addEventListener('DOMContentLoaded', () => {
     applyI18n();
     initMap();
     loadData();
+    loadAnnouncements();
+
     document.getElementById('searchBtn').addEventListener('click', render);
     document.getElementById('q').addEventListener('input', render);
     document.getElementById('qYear').addEventListener('input', render);
+
+    // Yil menusu disina tiklaninca kapat
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('qYearMenu');
+      const btn = document.getElementById('qYearBtn');
+      const inp = document.getElementById('qYear');
+      if (menu && !menu.contains(e.target) && !btn.contains(e.target) && e.target !== inp) {
+        menu.classList.add('hidden');
+      }
+    });
   });
 </script>
 </body>
