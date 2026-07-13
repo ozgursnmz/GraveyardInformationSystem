@@ -365,7 +365,7 @@ function badgeHtml(value) {
   if (v === 'Occupied') cls = 'bg-[#f1f5f9] text-[#475569] border-outline-variant';
   else if (v === 'Reserved') cls = 'bg-primary-fixed-dim text-on-primary-fixed border-primary-fixed';
   else if (v === 'Maintenance') cls = 'bg-tertiary-fixed text-tertiary border-tertiary-fixed';
-  return `<span class="px-3 py-1 rounded-full text-xs font-semibold border ${cls}">${fmt(v)}</span>`;
+  return `<span class="px-3 py-1 rounded-full text-xs font-semibold border ${cls}">${fmt(valueLabel(v))}</span>`;
 }
 
 // --- Istatistik kartlari ---
@@ -691,7 +691,7 @@ function buildFilters(cfg) {
       .filter((v) => v !== null && v !== undefined && v !== ''))]
       .sort((a, b) => ('' + a).localeCompare('' + b, 'tr'));
     const opts = [''].concat(vals).map((v) => {
-      const label = v === '' ? t('period_all') : v;
+      const label = v === '' ? t('period_all') : valueLabel(v);
       const val = ('' + v).replace(/'/g, "\\'");
       return `<button type="button" onclick="pickFilter('${c.field}','${val}')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-container-low">${label}</button>`;
     }).join('');
@@ -716,7 +716,7 @@ function pickFilter(field, value) {
   if (value === '') delete activeFilters[field];
   else activeFilters[field] = value;
   const lblEl = document.getElementById('fltval_' + field);
-  if (lblEl) lblEl.textContent = value === '' ? t('period_all') : value;
+  if (lblEl) lblEl.textContent = value === '' ? t('period_all') : valueLabel(value);
   const m = document.getElementById('fltmenu_' + field);
   if (m) m.classList.add('hidden');
   currentPage = 1;
@@ -760,7 +760,7 @@ function renderRows() {
     const cells = cfg.columns.map((c) => {
       const val = item[c.field];
       if (c.badge) return `<td class="py-4 px-6">${badgeHtml(val)}</td>`;
-      return `<td class="py-4 px-6">${fmt(val)}</td>`;
+      return `<td class="py-4 px-6">${fmt(valueLabel(val))}</td>`;
     }).join('');
 
     const kp = JSON.stringify(keyPath(cfg, item));
@@ -895,7 +895,7 @@ function buildForm(cfg, item) {
     } else if (f.type === 'select') {
       input = `<select id="f_${f.field}" ${disabled} class="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer disabled:opacity-60">
         <option value="">${t('select')}</option>
-        ${f.options.map((o) => `<option value="${o}" ${o === val ? 'selected' : ''}>${o}</option>`).join('')}
+        ${f.options.map((o) => `<option value="${o}" ${o === val ? 'selected' : ''}>${valueLabel(o)}</option>`).join('')}
       </select>`;
     } else {
       input = `<input id="f_${f.field}" type="${f.type}" value="${val}" ${f.required ? 'required' : ''} ${disabled}

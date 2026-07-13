@@ -14,6 +14,18 @@
   .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400}
   @keyframes toastIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
   .toast-in{animation:toastIn .2s ease-out}
+  /* Form kontrollerini siteyle uyumlu yap (native gorunumu gider) */
+  #formFields input[type=number]::-webkit-inner-spin-button,
+  #formFields input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+  #formFields input[type=number]{-moz-appearance:textfield}
+  #formFields select{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2374796e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right .75rem center;padding-right:2.25rem;
+  }
+  #formFields input[type=date]::-webkit-calendar-picker-indicator,
+  #formFields input[type=time]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.55}
+  #formFields input[type=date],#formFields input[type=time]{color-scheme:light}
+  html.dark #formFields input[type=date],html.dark #formFields input[type=time]{color-scheme:dark}
   :root{
     --primary-fixed:#c8e8d0;--primary-fixed-dim:#8ecf9e;--on-primary-fixed:#002110;
     --primary-container:#78a886;--on-primary-container:#d8f0de;--primary:#4a7c59;--on-primary:#ffffff;

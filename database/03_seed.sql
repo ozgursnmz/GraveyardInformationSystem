@@ -1322,3 +1322,9 @@ UPDATE z SET CurrentOccupancy = (SELECT COUNT(*) FROM GRAVE_PLOT g WHERE g.ZoneI
 GO
 SELECT (SELECT COUNT(*) FROM PERSON) AS Kisi,(SELECT COUNT(*) FROM DECEASED_PERSON) AS Vefat,(SELECT COUNT(*) FROM GRAVE_PLOT) AS Parsel,(SELECT COUNT(*) FROM PAYMENT) AS Odeme,(SELECT COUNT(*) FROM VISITOR_LOG) AS Ziyaret,(SELECT COUNT(*) FROM MAINTENANCE_LOG) AS Bakim;
 GO
+-- Parselleri yesil alanin icine sikisik izgaraya yerlestir
+;WITH n AS (SELECT PlotNumber, ROW_NUMBER() OVER (ORDER BY PlotNumber)-1 AS rn FROM GRAVE_PLOT)
+UPDATE gp SET Latitude = 36.895600 - ((n.rn/12)*0.000150),
+              Longitude = 30.623150 + ((n.rn%12)*0.000160)
+FROM GRAVE_PLOT gp JOIN n ON gp.PlotNumber = n.PlotNumber;
+GO

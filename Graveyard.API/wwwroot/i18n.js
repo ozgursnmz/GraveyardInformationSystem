@@ -90,6 +90,19 @@ const I18N = {
     st_Occupied: 'Dolu',
     st_Reserved: 'Rezerve',
     st_Maintenance: 'Bakım Gerektiriyor',
+    values: {
+      Available: 'Boş', Occupied: 'Dolu', Reserved: 'Rezerve', Maintenance: 'Bakım',
+      Cash: 'Nakit', Card: 'Kart', Transfer: 'Havale',
+      Individual: 'Bireysel', Family: 'Aile', Institution: 'Kurum',
+      Day: 'Gündüz', Night: 'Gece', Rotating: 'Dönüşümlü',
+      Male: 'Erkek', Female: 'Kadın', Unknown: 'Bilinmiyor',
+      Yes: 'Evet', No: 'Hayır',
+      Permanent: 'Kalıcı', Temporary: 'Geçici',
+      Islamic: 'İslami', Christian: 'Hristiyan', Veteran: 'Gazi', Memorial: 'Anma',
+      Admin: 'Yönetici', Public: 'Halka Açık',
+      Create: 'Ekleme', Update: 'Güncelleme', Delete: 'Silme',
+      Islam: 'İslam', Musevi: 'Musevi',
+    },
     pub_title: 'Mezar Yeri Sorgulama',
     pub_subtitle: 'Vefat eden yakınınızın adını girerek mezar konumunu bulun.',
     pub_search_ph: 'Ad soyad ile arayın...',
@@ -218,6 +231,13 @@ let LANG = localStorage.getItem('lang') || 'tr';
 
 function t(key) {
   return (I18N[LANG] && I18N[LANG][key]) || (I18N.tr[key]) || key;
+}
+
+// Veri degerlerini (Available, Card, Male...) dile gore cevir; bilinmiyorsa oldugu gibi birak
+function valueLabel(v) {
+  if (v === null || v === undefined || v === '') return v;
+  const map = I18N[LANG] && I18N[LANG].values;
+  return (map && map['' + v]) || v;
 }
 
 const LANG_NAMES = { tr: 'Türkçe', en: 'English' };
