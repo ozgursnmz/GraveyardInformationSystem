@@ -1,5 +1,6 @@
 using System.Text;
 using Graveyard.API.Data;
+using Graveyard.API.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,7 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // Controller'lar
-builder.Services.AddControllers()
+builder.Services.AddControllers(options => options.Filters.Add<AuditFilter>())
     .AddJsonOptions(o =>
         o.JsonSerializerOptions.ReferenceHandler =
             System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);

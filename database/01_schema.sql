@@ -175,3 +175,15 @@ IF NOT EXISTS (SELECT 1 FROM APP_USER WHERE Username='admin')
     INSERT INTO APP_USER (Username, PasswordHash, Role)
     VALUES ('admin', '$2b$11$e73qw8Ibeh/DGX37XBOQ4e1b7ZFafBMQXLU1UA2PXuiy1XudixoKm', 'Admin');
 GO
+
+/* Islem gunlugu (audit log) */
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AUDIT_LOG')
+    CREATE TABLE AUDIT_LOG (
+        AuditID   INT IDENTITY(1,1) PRIMARY KEY,
+        Username  NVARCHAR(50),
+        Action    NVARCHAR(20),
+        Entity    NVARCHAR(50),
+        EntityKey NVARCHAR(100),
+        Timestamp DATETIME NOT NULL DEFAULT GETDATE()
+    );
+GO

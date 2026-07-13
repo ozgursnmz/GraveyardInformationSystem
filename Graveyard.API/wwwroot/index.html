@@ -12,6 +12,8 @@
 <style>
   body{font-family:'Inter',sans-serif}
   .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400}
+  @keyframes toastIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+  .toast-in{animation:toastIn .2s ease-out}
   :root{
     --primary-fixed:#c8e8d0;--primary-fixed-dim:#8ecf9e;--on-primary-fixed:#002110;
     --primary-container:#78a886;--on-primary-container:#d8f0de;--primary:#4a7c59;--on-primary:#ffffff;
@@ -47,7 +49,7 @@
       <p class="text-xs text-[#a3b18a]" data-i18n="app_subtitle">Belediye Yönetim Paneli</p>
     </div>
   </div>
-  <nav class="flex-1 flex flex-col gap-2">
+  <nav class="flex-1 flex flex-col gap-2 overflow-y-auto pr-1 -mr-2">
     <a href="#" data-view="home" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-white/80 hover:text-white hover:bg-white/10 transition-all">
       <span class="material-symbols-outlined">dashboard</span> <span data-i18n="nav_home">Ana Sayfa</span></a>
     <a href="#" data-view="map" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-white/80 hover:text-white hover:bg-white/10 transition-all">
@@ -82,6 +84,8 @@
       <span class="material-symbols-outlined">badge</span> <span data-i18n="nav_employees">Çalışanlar</span></a>
     <a href="#" data-entity="users" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-white/80 hover:text-white hover:bg-white/10 transition-all">
       <span class="material-symbols-outlined">manage_accounts</span> <span data-i18n="nav_users">Kullanıcılar</span></a>
+    <a href="#" data-entity="auditLogs" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-white/80 hover:text-white hover:bg-white/10 transition-all">
+      <span class="material-symbols-outlined">history</span> <span data-i18n="nav_audit">İşlem Günlüğü</span></a>
   </nav>
   <button id="btnLogout" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-white/80 hover:text-white hover:bg-white/10 transition-all">
     <span class="material-symbols-outlined">logout</span> <span data-i18n="logout">Çıkış Yap</span></button>
@@ -227,9 +231,10 @@
       <div id="tableView" class="hidden">
       <!-- Table -->
       <div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
-        <div class="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-bright">
-          <h3 id="tableTitle" class="text-lg font-semibold">Kayıtlar</h3>
-          <button onclick="exportExcel()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-low text-on-surface-variant rounded-lg border border-outline-variant hover:bg-surface-container-high transition-colors text-sm font-semibold">
+        <div class="p-4 border-b border-outline-variant flex flex-wrap gap-3 items-center bg-surface-bright">
+          <h3 id="tableTitle" class="text-lg font-semibold mr-2">Kayıtlar</h3>
+          <div id="tableFilters" class="flex flex-wrap gap-2 items-center"></div>
+          <button onclick="exportExcel()" class="ml-auto flex items-center gap-2 px-4 py-2 bg-surface-container-low text-on-surface-variant rounded-lg border border-outline-variant hover:bg-surface-container-high transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-[18px]">download</span><span data-i18n="excel_export">Excel'e Aktar</span>
           </button>
         </div>
@@ -243,6 +248,11 @@
         </div>
         <div class="p-4 border-t border-outline-variant bg-surface-container flex justify-between items-center text-sm text-secondary">
           <span id="pageInfo">—</span>
+          <div class="flex items-center gap-2">
+            <button id="prevPage" onclick="changePage(-1)" class="p-1 rounded-full hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed"><span class="material-symbols-outlined">chevron_left</span></button>
+            <span id="pageLabel" class="text-xs font-semibold min-w-[52px] text-center"></span>
+            <button id="nextPage" onclick="changePage(1)" class="p-1 rounded-full hover:bg-surface-container-high disabled:opacity-40 disabled:cursor-not-allowed"><span class="material-symbols-outlined">chevron_right</span></button>
+          </div>
         </div>
       </div>
       </div> <!-- /tableView -->
@@ -291,6 +301,23 @@
       <button id="btnCancel" type="button" class="px-6 py-2.5 bg-surface-container-low text-secondary text-sm font-semibold rounded-full hover:bg-surface-container-high transition-colors" data-i18n="cancel">İptal</button>
       <button id="btnSave" type="button" class="px-8 py-2.5 bg-primary text-on-primary text-sm font-semibold rounded-full hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm">
         <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1;">save</span> <span data-i18n="save">Kaydet</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Bildirim (toast) -->
+<div id="toast" class="fixed top-5 right-5 z-[300] flex flex-col gap-2 items-end"></div>
+
+<!-- Onay penceresi -->
+<div id="confirmModal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+  <div class="bg-surface-container-lowest w-full max-w-sm rounded-2xl border border-outline-variant shadow-2xl p-6">
+    <div class="flex items-start gap-3">
+      <span class="material-symbols-outlined text-error text-3xl">warning</span>
+      <p id="confirmMsg" class="text-base font-medium text-on-surface pt-1">Emin misiniz?</p>
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button id="confirmCancel" class="px-5 py-2.5 bg-surface-container-low text-secondary rounded-full text-sm font-semibold hover:bg-surface-container-high transition-colors" data-i18n="cancel">İptal</button>
+      <button id="confirmOk" class="px-5 py-2.5 bg-error text-white rounded-full text-sm font-semibold hover:opacity-90 transition-opacity" data-i18n="confirm_ok">Sil</button>
     </div>
   </div>
 </div>

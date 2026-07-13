@@ -83,8 +83,8 @@ const ENTITIES = {
     label: 'nav_gravePlots', endpoint: 'GravePlots', key: ['plotNumber'],
     columns: [
       { field: 'plotNumber', label: { tr: 'Parsel No', en: 'Plot No' } },
-      { field: 'zoneId', label: { tr: 'Bölge', en: 'Zone' } },
-      { field: 'status', label: { tr: 'Durum', en: 'Status' }, badge: true },
+      { field: 'zoneId', label: { tr: 'Bölge', en: 'Zone' }, filter: true },
+      { field: 'status', label: { tr: 'Durum', en: 'Status' }, badge: true, filter: true },
       { field: 'length', label: { tr: 'Uzunluk', en: 'Length' } },
       { field: 'width', label: { tr: 'Genişlik', en: 'Width' } },
     ],
@@ -104,10 +104,10 @@ const ENTITIES = {
     columns: [
       { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' } },
       { field: 'deceasedName', label: { tr: 'İsim Soyisim', en: 'Full Name' } },
-      { field: 'zoneName', label: { tr: 'Bölge', en: 'Zone' } },
+      { field: 'zoneName', label: { tr: 'Bölge', en: 'Zone' }, filter: true },
       { field: 'plotNumber', label: { tr: 'Parsel', en: 'Plot' } },
       { field: 'dateOfDeath', label: { tr: 'Vefat Tarihi', en: 'Date of Death' } },
-      { field: 'religion', label: { tr: 'Din', en: 'Religion' } },
+      { field: 'religion', label: { tr: 'Din', en: 'Religion' }, filter: true },
     ],
     writeEndpoint: 'DeceasedPeople/full',
     fields: [
@@ -132,7 +132,7 @@ const ENTITIES = {
     label: 'nav_graveOwners', endpoint: 'GraveOwners', key: ['ssn'],
     columns: [
       { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' } },
-      { field: 'ownerType', label: { tr: 'Tür', en: 'Type' }, badge: true },
+      { field: 'ownerType', label: { tr: 'Tür', en: 'Type' }, badge: true, filter: true },
       { field: 'relationship', label: { tr: 'Yakınlık', en: 'Relationship' } },
       { field: 'phoneNumber', label: { tr: 'Telefon', en: 'Phone' } },
       { field: 'email', label: { tr: 'E-posta', en: 'Email' } },
@@ -153,7 +153,6 @@ const ENTITIES = {
     columns: [
       { field: 'zoneId', label: { tr: 'Bölge ID', en: 'Zone ID' } },
       { field: 'name', label: { tr: 'Ad', en: 'Name' } },
-      { field: 'religionType', label: { tr: 'Din', en: 'Religion' } },
       { field: 'totalCapacity', label: { tr: 'Kapasite', en: 'Capacity' } },
       { field: 'currentOccupancy', label: { tr: 'Dolu', en: 'Occupied' } },
       { field: 'groundType', label: { tr: 'Zemin', en: 'Ground' } },
@@ -161,7 +160,6 @@ const ENTITIES = {
     fields: [
       { field: 'zoneId', label: { tr: 'Bölge ID (ör. Z011)', en: 'Zone ID (e.g. Z011)' }, type: 'text', required: true, pk: true },
       { field: 'name', label: { tr: 'Ad', en: 'Name' }, type: 'text' },
-      { field: 'religionType', label: { tr: 'Din', en: 'Religion' }, type: 'text' },
       { field: 'totalCapacity', label: { tr: 'Toplam Kapasite', en: 'Total Capacity' }, type: 'number' },
       { field: 'currentOccupancy', label: { tr: 'Mevcut Doluluk', en: 'Current Occupancy' }, type: 'number' },
       { field: 'groundType', label: { tr: 'Zemin Tipi', en: 'Ground Type' }, type: 'text' },
@@ -174,7 +172,7 @@ const ENTITIES = {
       { field: 'receiptNo', label: { tr: 'Makbuz No', en: 'Receipt No' } },
       { field: 'amount', label: { tr: 'Tutar', en: 'Amount' } },
       { field: 'paymentDate', label: { tr: 'Tarih', en: 'Date' } },
-      { field: 'paymentMethod', label: { tr: 'Yöntem', en: 'Method' }, badge: true },
+      { field: 'paymentMethod', label: { tr: 'Yöntem', en: 'Method' }, badge: true, filter: true },
       { field: 'ownerSsn', label: { tr: 'Sahip SSN', en: 'Owner SSN' } },
     ],
     fields: [
@@ -213,7 +211,7 @@ const ENTITIES = {
       { field: 'employeeId', label: { tr: 'ID', en: 'ID' } },
       { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' } },
       { field: 'jobTitle', label: { tr: 'Görev', en: 'Job Title' } },
-      { field: 'shift', label: { tr: 'Vardiya', en: 'Shift' }, badge: true },
+      { field: 'shift', label: { tr: 'Vardiya', en: 'Shift' }, badge: true, filter: true },
       { field: 'salary', label: { tr: 'Maaş', en: 'Salary' } },
       { field: 'hireDate', label: { tr: 'İşe Giriş', en: 'Hire Date' } },
     ],
@@ -252,7 +250,7 @@ const ENTITIES = {
       { field: 'reservationId', label: { tr: 'ID', en: 'ID' } },
       { field: 'startDate', label: { tr: 'Başlangıç', en: 'Start' } },
       { field: 'endDate', label: { tr: 'Bitiş', en: 'End' } },
-      { field: 'reservationType', label: { tr: 'Tür', en: 'Type' }, badge: true },
+      { field: 'reservationType', label: { tr: 'Tür', en: 'Type' }, badge: true, filter: true },
       { field: 'ownerSsn', label: { tr: 'Sahip', en: 'Owner' } },
       { field: 'plotNumber', label: { tr: 'Parsel', en: 'Plot' } },
     ],
@@ -274,7 +272,7 @@ const ENTITIES = {
       { field: 'serviceDate', label: { tr: 'Tarih', en: 'Date' } },
       { field: 'startTime', label: { tr: 'Başlangıç', en: 'Start' } },
       { field: 'endTime', label: { tr: 'Bitiş', en: 'End' } },
-      { field: 'serviceType', label: { tr: 'Tür', en: 'Type' }, badge: true },
+      { field: 'serviceType', label: { tr: 'Tür', en: 'Type' }, badge: true, filter: true },
       { field: 'deceasedSsn', label: { tr: 'Vefat Eden', en: 'Deceased' } },
     ],
     fields: [
@@ -329,7 +327,7 @@ const ENTITIES = {
     columns: [
       { field: 'userId', label: { tr: 'ID', en: 'ID' } },
       { field: 'username', label: { tr: 'Kullanıcı Adı', en: 'Username' } },
-      { field: 'role', label: { tr: 'Rol', en: 'Role' }, badge: true },
+      { field: 'role', label: { tr: 'Rol', en: 'Role' }, badge: true, filter: true },
       { field: 'createdAt', label: { tr: 'Oluşturulma', en: 'Created' } },
     ],
     fields: [
@@ -338,11 +336,23 @@ const ENTITIES = {
       { field: 'role', label: { tr: 'Rol', en: 'Role' }, type: 'select', options: ['Admin', 'Public'] },
     ],
   },
+  auditLogs: {
+    label: 'nav_audit', endpoint: 'AuditLogs', readOnly: true, key: ['auditId'],
+    columns: [
+      { field: 'timestamp', label: { tr: 'Zaman', en: 'Time' } },
+      { field: 'username', label: { tr: 'Kullanıcı', en: 'User' }, filter: true },
+      { field: 'action', label: { tr: 'İşlem', en: 'Action' }, badge: true, filter: true },
+      { field: 'entity', label: { tr: 'Tablo', en: 'Entity' }, filter: true },
+      { field: 'entityKey', label: { tr: 'Kayıt', en: 'Record' } },
+    ],
+  },
 };
 
 let currentKey = 'gravePlots';
 let currentView = 'home';
 let currentData = [];
+let currentPage = 1;
+let activeFilters = {};
 let currentMonths = 0; // 0 = tum zamanlar
 
 const el = (id) => document.getElementById(id);
@@ -613,9 +623,9 @@ async function showCalendar() {
       eventClick: (info) => {
         const p = info.event.extendedProps;
         if (p.kind === 'visit') {
-          alert(`${info.event.title}\n${t('cal_purpose')}: ${p.purpose || '—'}\n${t('cal_plot')}: ${p.plot || '—'}`);
+          toast(`${info.event.title}\n${t('cal_purpose')}: ${p.purpose || '—'}\n${t('cal_plot')}: ${p.plot || '—'}`);
         } else {
-          alert(`${info.event.title}\n${t('cal_service')}: ${p.serviceType || '—'}\n${t('cal_attendees')}: ${p.attendees ?? '—'}`);
+          toast(`${info.event.title}\n${t('cal_service')}: ${p.serviceType || '—'}\n${t('cal_attendees')}: ${p.attendees ?? '—'}`);
         }
       },
     });
@@ -655,29 +665,98 @@ async function loadEntity(entityKey) {
   try {
     const res = await fetch('/api/' + cfg.endpoint, { headers: authHeaders() });
     currentData = await res.json();
+    currentPage = 1;
+    buildFilters(cfg);
     renderRows();
   } catch (e) {
     el('tableBody').innerHTML = `<tr><td class="py-8 px-6 text-center text-error" colspan="99">${t('load_error')}</td></tr>`;
   }
 }
 
+const PAGE_SIZE = 20;
+
+function changePage(delta) {
+  currentPage += delta;
+  renderRows();
+}
+
+// Filtrelenebilir sutunlar icin ozel acilir menuler (siteyle uyumlu)
+function buildFilters(cfg) {
+  activeFilters = {};
+  const box = el('tableFilters');
+  const cols = (cfg.columns || []).filter((c) => c.filter);
+  box.innerHTML = cols.map((c) => {
+    const vals = [...new Set(currentData
+      .map((r) => r[c.field])
+      .filter((v) => v !== null && v !== undefined && v !== ''))]
+      .sort((a, b) => ('' + a).localeCompare('' + b, 'tr'));
+    const opts = [''].concat(vals).map((v) => {
+      const label = v === '' ? t('period_all') : v;
+      const val = ('' + v).replace(/'/g, "\\'");
+      return `<button type="button" onclick="pickFilter('${c.field}','${val}')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-container-low">${label}</button>`;
+    }).join('');
+    return `<div class="relative">
+      <button type="button" onclick="toggleFilterMenu('${c.field}')" class="flex items-center gap-2 px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-full text-sm hover:border-primary transition-colors">
+        <span class="text-on-surface-variant">${lbl(c.label)}:</span>
+        <span id="fltval_${c.field}" class="font-semibold">${t('period_all')}</span>
+        <span class="material-symbols-outlined text-[18px] text-on-surface-variant">expand_more</span>
+      </button>
+      <div id="fltmenu_${c.field}" class="hidden absolute left-0 mt-1 min-w-[180px] max-h-64 overflow-y-auto bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-[500]">${opts}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleFilterMenu(field) {
+  const m = document.getElementById('fltmenu_' + field);
+  document.querySelectorAll('[id^="fltmenu_"]').forEach((x) => { if (x !== m) x.classList.add('hidden'); });
+  m.classList.toggle('hidden');
+}
+
+function pickFilter(field, value) {
+  if (value === '') delete activeFilters[field];
+  else activeFilters[field] = value;
+  const lblEl = document.getElementById('fltval_' + field);
+  if (lblEl) lblEl.textContent = value === '' ? t('period_all') : value;
+  const m = document.getElementById('fltmenu_' + field);
+  if (m) m.classList.add('hidden');
+  currentPage = 1;
+  renderRows();
+}
+
 function renderRows() {
   const cfg = ENTITIES[currentKey];
   const q = el('searchInput').value.trim().toLowerCase();
   let rows = currentData;
+
+  // Sutun filtreleri
+  Object.entries(activeFilters).forEach(([f, v]) => {
+    rows = rows.filter((item) => (item[f] ?? '').toString() === v);
+  });
+
+  // Metin aramasi
   if (q) {
     rows = rows.filter((item) =>
       cfg.columns.some((c) => (item[c.field] ?? '').toString().toLowerCase().includes(q))
     );
   }
 
-  if (!rows.length) {
+  const total = rows.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (currentPage > pages) currentPage = pages;
+  if (currentPage < 1) currentPage = 1;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+  if (!total) {
     el('tableBody').innerHTML = `<tr><td class="py-8 px-6 text-center text-secondary" colspan="99">${t('no_records')}</td></tr>`;
     el('pageInfo').textContent = t('total') + ': 0';
+    el('pageLabel').textContent = '';
+    el('prevPage').disabled = true;
+    el('nextPage').disabled = true;
     return;
   }
 
-  el('tableBody').innerHTML = rows.map((item) => {
+  el('tableBody').innerHTML = pageRows.map((item) => {
     const cells = cfg.columns.map((c) => {
       const val = item[c.field];
       if (c.badge) return `<td class="py-4 px-6">${badgeHtml(val)}</td>`;
@@ -700,7 +779,10 @@ function renderRows() {
     return `<tr class="hover:bg-surface-container-low transition-colors">${cells}${actions}</tr>`;
   }).join('');
 
-  el('pageInfo').textContent = `${t('shown')}: ${rows.length} / ${t('total')}: ${currentData.length}`;
+  el('pageInfo').textContent = `${t('shown')}: ${start + 1}-${start + pageRows.length} / ${t('total')}: ${total}`;
+  el('pageLabel').textContent = `${currentPage} / ${pages}`;
+  el('prevPage').disabled = currentPage <= 1;
+  el('nextPage').disabled = currentPage >= pages;
 }
 
 // --- Modal / Form ---
@@ -887,6 +969,7 @@ async function saveRecord() {
     closeModal();
     await loadEntity(currentKey);
     await loadStats();
+    toast(t('toast_saved'));
   } catch (e) {
     showModalError(t('err_generic'));
   }
@@ -894,18 +977,19 @@ async function saveRecord() {
 
 async function deleteRow(id) {
   const cfg = ENTITIES[currentKey];
-  if (!confirm(t('confirm_delete'))) return;
+  if (!(await confirmDialog(t('confirm_delete')))) return;
   try {
     const res = await fetch('/api/' + (cfg.writeEndpoint || cfg.endpoint) + '/' + id, { method: 'DELETE', headers: authHeaders() });
-    if (res.status === 401 || res.status === 403) { alert(t('err_auth')); return; }
+    if (res.status === 401 || res.status === 403) { toast(t('err_auth'), 'error'); return; }
     if (!res.ok) {
       const txt = await res.text();
-      alert(txt.includes('REFERENCE') || txt.includes('FOREIGN KEY') ? t('delete_fk') : t('err_generic'));
+      toast(txt.includes('REFERENCE') || txt.includes('FOREIGN KEY') ? t('delete_fk') : t('err_generic'), 'error');
       return;
     }
     await loadEntity(currentKey);
     await loadStats();
-  } catch (e) { alert(t('err_generic')); }
+    toast(t('toast_deleted'));
+  } catch (e) { toast(t('err_generic'), 'error'); }
 }
 
 // Aktif tabloyu (arama filtresi uygulanmis) Excel'e aktar
@@ -915,6 +999,9 @@ function exportExcel() {
 
   const q = el('searchInput').value.trim().toLowerCase();
   let data = currentData;
+  Object.entries(activeFilters).forEach(([f, v]) => {
+    data = data.filter((item) => (item[f] ?? '').toString() === v);
+  });
   if (q) data = data.filter((item) =>
     cfg.columns.some((c) => (item[c.field] ?? '').toString().toLowerCase().includes(q)));
 
@@ -981,6 +1068,37 @@ function showModalError(msg) {
   box.classList.remove('hidden');
 }
 
+// Bildirim (toast) - native alert yerine
+function toast(message, type = 'info') {
+  const box = el('toast');
+  if (!box) return;
+  const div = document.createElement('div');
+  div.className = (type === 'error' ? 'bg-error text-white' : 'bg-primary text-on-primary') +
+    ' px-4 py-3 rounded-xl shadow-lg text-sm font-semibold max-w-xs toast-in';
+  div.style.whiteSpace = 'pre-line';
+  div.textContent = message;
+  box.appendChild(div);
+  setTimeout(() => {
+    div.style.transition = 'opacity .3s';
+    div.style.opacity = '0';
+    setTimeout(() => div.remove(), 300);
+  }, 3200);
+}
+
+// Ozel onay penceresi - native confirm yerine
+function confirmDialog(message) {
+  return new Promise((resolve) => {
+    const modal = el('confirmModal');
+    el('confirmMsg').textContent = message;
+    modal.classList.remove('hidden');
+    const ok = el('confirmOk');
+    const cancel = el('confirmCancel');
+    const done = (val) => { modal.classList.add('hidden'); ok.onclick = null; cancel.onclick = null; resolve(val); };
+    ok.onclick = () => done(true);
+    cancel.onclick = () => done(false);
+  });
+}
+
 function friendlyError(text, status) {
   const s = (text || '').toString();
   if (s.includes('PRIMARY KEY') || s.includes('duplicate key')) return t('err_duplicate');
@@ -1015,7 +1133,13 @@ document.addEventListener('DOMContentLoaded', () => {
       closeSidebar();
     });
   });
-  el('searchInput').addEventListener('input', renderRows);
+  el('searchInput').addEventListener('input', () => { currentPage = 1; renderRows(); });
+  // Filtre menusu disina tiklaninca kapat
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#tableFilters')) {
+      document.querySelectorAll('[id^="fltmenu_"]').forEach((x) => x.classList.add('hidden'));
+    }
+  });
   el('btnAdd').addEventListener('click', openAdd);
   el('btnSave').addEventListener('click', saveRecord);
   el('btnCancel').addEventListener('click', closeModal);

@@ -14,6 +14,8 @@ public partial class GraveyardDbContext : DbContext
 
     public virtual DbSet<AppUser> AppUsers { get; set; }
 
+    public virtual DbSet<AuditLog> AuditLogs { get; set; }
+
     public virtual DbSet<BurialPermit> BurialPermits { get; set; }
 
     public virtual DbSet<CemeteryZone> CemeteryZones { get; set; }
@@ -59,6 +61,18 @@ public partial class GraveyardDbContext : DbContext
                 .HasMaxLength(20)
                 .HasDefaultValue("Admin");
             entity.Property(e => e.Username).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(e => e.AuditId);
+            entity.ToTable("AUDIT_LOG");
+            entity.Property(e => e.AuditId).HasColumnName("AuditID");
+            entity.Property(e => e.Username).HasMaxLength(50);
+            entity.Property(e => e.Action).HasMaxLength(20);
+            entity.Property(e => e.Entity).HasMaxLength(50);
+            entity.Property(e => e.EntityKey).HasMaxLength(100);
+            entity.Property(e => e.Timestamp).HasColumnType("datetime").HasDefaultValueSql("(getdate())");
         });
 
         modelBuilder.Entity<BurialPermit>(entity =>

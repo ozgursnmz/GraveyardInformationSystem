@@ -1,0 +1,59 @@
+# Tek komutla tum sistem: SQL Server + veritabani kurulumu + .NET API
+# Calistir:  docker compose up --build
+# Site:      http://localhost:5208
+
+services:
+  # --- SQL Server ---
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Graveyard2026"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Graveyard2026 -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # --- Veritabani kurulumu (semasi + index + veri) ---
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./database:/scripts:ro
+    entrypoint: >
+      /bin/bash -c "
+      EXISTS=$$(/opt/mssql-tools18/bin/sqlcmd -S db -U sa -P Graveyard2026 -C -h -1 -W -Q \"SET NOCOUNT ON; SELECT COUNT(*) FROM sys.databases WHERE name='GraveyardBurialManagement'\" | tr -d '[:space:]');
+      if [ \"$$EXISTS\" = \"1\" ]; then echo 'Veritabani zaten mevcut, kurulum atlandi.'; exit 0; fi;
+      for f in 01_schema 02_indexes 03_seed; do
+        echo Running $$f.sql ...;
+        /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P Graveyard2026 -C -b -i /scripts/$$f.sql || exit 1;
+      done;
+      echo 'Veritabani hazir.'"
+
+  # --- .NET API + statik frontend ---
+  api:
+    build: .
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=GraveyardBurialManagement;User Id=sa;Password=Graveyard2026;TrustServerCertificate=True;"
+      Jwt__Key: "DockerComposeSecretKey_2026_ChangeMe_AtLeast32Chars!"
+      Jwt__Issuer: "GraveyardAPI"
+      Jwt__Audience: "GraveyardClient"
+      Jwt__ExpireMinutes: "120"
+    ports:
+      - "5208:8080"
+
+volumes:
+  mssql-data:

@@ -78,7 +78,21 @@ Browser (Dashboard / Finder)
 
 ## Getting Started
 
-### Prerequisites
+### Option A — One command (Docker Compose) ⭐ recommended
+
+Requires only **Docker Desktop**. This builds the API, starts SQL Server, creates the schema, applies indexes and loads ~3 years of sample data automatically:
+
+```bash
+docker compose up --build
+```
+
+Then open **http://localhost:5208** (public finder) or **/index.html** (admin, `admin` / `Admin123!`).
+
+---
+
+### Option B — Manual (run the API locally)
+
+#### Prerequisites
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) (for SQL Server)
 
@@ -125,11 +139,13 @@ dotnet run
 
 | Page | URL |
 |------|-----|
-| Admin dashboard | http://localhost:5208/ |
-| Public grave finder | http://localhost:5208/find.html |
+| Public grave finder (landing) | http://localhost:5208/ |
+| Admin dashboard | http://localhost:5208/index.html |
 | Swagger (API docs) | http://localhost:5208/swagger |
 
-**Default login:** `admin` / `Admin123!`
+The site opens on the **public grave finder**; use the **Login** button (top‑right) to reach the admin dashboard.
+
+**Default admin login:** `admin` / `Admin123!`
 
 ---
 
