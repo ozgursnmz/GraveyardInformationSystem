@@ -5,6 +5,11 @@ A full‑stack **cemetery management system**: a secure **.NET 10 Web API** over
 The system digitises the entire lifecycle of a municipal cemetery — plots, deceased records, ownership, reservations, payments, funerals, maintenance and visitors — behind a role‑based, KVKK‑aware API, and lets families locate a loved one from their phone.
 
 ---
+<img width="2906" height="1646" alt="image" src="https://github.com/user-attachments/assets/c29fedfd-c712-4713-be84-48b5f9019248" />
+
+<img width="2322" height="1532" alt="image" src="https://github.com/user-attachments/assets/3d52d761-cacc-45be-8884-53f7826cd14c" />
+
+
 
 ## Features
 
@@ -14,15 +19,28 @@ The system digitises the entire lifecycle of a municipal cemetery — plots, dec
 - **Interactive map** (Leaflet + OpenStreetMap) of all plots, colour‑coded by status (Occupied / Available / Reserved / Maintenance), with popups and **Google Maps directions**.
 - **Calendar** (FullCalendar) combining funeral services and visitor logs.
 - **One‑step burial registration** — creates the person and the deceased record in a single transaction; plot & permit chosen from dropdowns.
+<img width="2940" height="1674" alt="image" src="https://github.com/user-attachments/assets/003ce8df-6e3b-4299-8980-fbb0901e63fd" />
+
 - **Reference dropdowns** for every foreign key, so invalid IDs are impossible.
 - **PDF payment receipts** (embedded Turkish‑capable font) and **Excel export** of any table.
 - **Role management**, **Turkish / English** interface, **light / dark** theme, and a **responsive / mobile‑friendly** layout.
+
+- <img width="2930" height="1648" alt="image" src="https://github.com/user-attachments/assets/d87889b1-8813-44c5-8bf1-90741c7006a6" />
+
 
 ### Public Grave Finder (`find.html`, no login)
 - Search by **name** and **death year**.
 - Shows the **zone**, **plot number**, **map location** and a **directions** link — exactly what a visitor needs on site.
 
+<img width="2940" height="1648" alt="image" src="https://github.com/user-attachments/assets/601fd97d-7f63-46c3-96bd-b52915ca06f8" />
+
+
 ---
+<img width="2366" height="1522" alt="image" src="https://github.com/user-attachments/assets/736809b5-8ffd-475d-9be8-e2320fa6f2ab" />
+<img width="2354" height="1518" alt="image" src="https://github.com/user-attachments/assets/e8c8dc54-b02d-49db-8077-7bdd2843b917" />
+
+<img width="2274" height="1446" alt="image" src="https://github.com/user-attachments/assets/da352fc1-6bc6-4049-9429-51ea7b8975af" />
+
 
 ## Tech Stack
 
@@ -37,6 +55,8 @@ The system digitises the entire lifecycle of a municipal cemetery — plots, dec
 The frontend is served as static files from the API's `wwwroot`, so the whole app runs from a single process.
 
 ---
+<img width="2940" height="1674" alt="image" src="https://github.com/user-attachments/assets/f9ca0873-63fd-407a-a574-144885a342a4" />
+
 
 ## Architecture
 
@@ -53,6 +73,8 @@ Browser (Dashboard / Finder)
 - **Security model:** every API read requires authentication **except** the public finder endpoint (`GET /api/GravePlots/map`), which returns only name + location — never phone numbers or national IDs. All writes require the **Admin** role.
 
 ---
+<img width="2940" height="1674" alt="image" src="https://github.com/user-attachments/assets/ceee6cba-6dd5-4af5-a54c-38d2d3214e5a" />
+
 
 ## Getting Started
 
