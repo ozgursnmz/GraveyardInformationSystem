@@ -61,6 +61,8 @@ The frontend is served as static files from the API's `wwwroot`, so the whole ap
 ---
 <img width="2940" height="1674" alt="image" src="https://github.com/user-attachments/assets/f9ca0873-63fd-407a-a574-144885a342a4" />
 
+<img width="2940" height="1670" alt="image" src="https://github.com/user-attachments/assets/73c9d691-8f9c-4f36-9468-73ef47a547bd" />
+
 
 ## Architecture
 
