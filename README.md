@@ -34,7 +34,8 @@ The system digitises the entire lifecycle of a municipal cemetery — plots, dec
 - Search by **name** and **death year**.
 - Shows the **zone**, **plot number**, **map location** and a **directions** link — exactly what a visitor needs on site.
 
-<img width="2940" height="1648" alt="image" src="https://github.com/user-attachments/assets/601fd97d-7f63-46c3-96bd-b52915ca06f8" />
+<img width="2272" height="1404" alt="image" src="https://github.com/user-attachments/assets/393ebe92-5e01-41b5-b1ad-35a8715f4bc3" />
+
 
 
 ---
