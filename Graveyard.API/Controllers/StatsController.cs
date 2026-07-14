@@ -99,6 +99,26 @@ public class StatsController : ControllerBase
             .ToListAsync();
         var maint = maintRaw.Select(x => new LabelValue(x.Month.ToString(), x.Cost ?? 0)).ToList();
 
-        return new ChartsDto(zones, deaths, methods, income, expense, maint);
+        // Bolge doluluk yuzdesi (zamansiz) = mevcut doluluk / toplam kapasite
+        var zoneCap = await _context.CemeteryZones
+            .Select(z => new { Name = z.Name ?? z.ZoneId, z.TotalCapacity, z.CurrentOccupancy })
+            .ToListAsync();
+        var zonePct = zoneCap.Select(z => new LabelValue(
+            z.Name,
+            z.TotalCapacity is > 0
+                ? Math.Round((double)(z.CurrentOccupancy ?? 0) / z.TotalCapacity!.Value * 100, 0)
+                : 0)).ToList();
+
+        // Gunlere gore ziyaret sayisi (donem filtreli) - 0=Pazar..6=Cumartesi
+        var visitDates = await _context.VisitorLogs
+            .Where(v => v.VisitDate != null && v.VisitDate >= start)
+            .Select(v => v.VisitDate!.Value)
+            .ToListAsync();
+        var visits = visitDates
+            .GroupBy(d => (int)d.DayOfWeek)
+            .Select(g => new LabelValue(g.Key.ToString(), g.Count()))
+            .ToList();
+
+        return new ChartsDto(zones, deaths, methods, income, expense, maint, zonePct, visits);
     }
 }

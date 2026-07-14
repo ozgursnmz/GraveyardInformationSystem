@@ -96,6 +96,7 @@ const ENTITIES = {
       { field: 'width', label: { tr: 'Genişlik (m)', en: 'Width (m)' }, type: 'number' },
       { field: 'latitude', label: { tr: 'Enlem', en: 'Latitude' }, type: 'number' },
       { field: 'longitude', label: { tr: 'Boylam', en: 'Longitude' }, type: 'number' },
+      { field: 'mapPick', label: { tr: 'Konum', en: 'Location' }, type: 'mapPicker' },
       { field: 'monumentCode', label: { tr: 'Anıt', en: 'Monument' }, type: 'refSelect', ref: { endpoint: 'MonumentTypes', value: 'monumentCode', labelFields: ['material', 'style'] } },
     ],
   },
@@ -451,6 +452,36 @@ async function loadCharts() {
       labels: maintMonths,
       datasets: [{ data: d.maintenanceByMonth.map((x) => x.value), borderColor: gold, backgroundColor: 'rgba(112,92,48,.15)', fill: true, tension: 0.3 }],
     });
+
+    // En yogun ziyaret gunleri - Pzt..Paz sirasi (0=Pazar backend'ten)
+    const visitMap = {};
+    (d.visitsByWeekday || []).forEach((x) => { visitMap[x.label] = x.value; });
+    const weekOrder = [1, 2, 3, 4, 5, 6, 0]; // Pzt, Sal, ... Paz
+    const weekLabels = weekOrder.map((i) =>
+      new Date(2024, 0, 7 + i).toLocaleDateString(loc, { weekday: 'short' })); // 2024-01-07 = Pazar
+    drawChart('chartVisits', 'bar', {
+      labels: weekLabels,
+      datasets: [{ data: weekOrder.map((i) => visitMap[i] || 0), backgroundColor: green, borderRadius: 6 }],
+    });
+
+    // Bolge doluluk yuzdesi - HTML cubuklar
+    const bars = el('zoneOccBars');
+    if (bars) {
+      const pct = d.zoneOccupancyPct || [];
+      bars.innerHTML = pct.length ? pct.map((z) => {
+        const v = Math.max(0, Math.min(100, z.value));
+        const bar = v >= 85 ? '#b83230' : v >= 60 ? gold : green;
+        return `<div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-on-surface font-medium">${z.label}</span>
+            <span class="text-secondary font-semibold">%${v}</span>
+          </div>
+          <div class="w-full h-2.5 rounded-full bg-surface-container-high overflow-hidden">
+            <div class="h-full rounded-full" style="width:${v}%;background:${bar}"></div>
+          </div>
+        </div>`;
+      }).join('') : `<p class="text-sm text-secondary">—</p>`;
+    }
   } catch (e) { /* sessiz */ }
 }
 
@@ -861,6 +892,17 @@ function buildForm(cfg, item) {
     const val = item ? (item[f.field] ?? '') : '';
     const disabled = item && f.pk ? 'disabled' : '';
     let input;
+    if (f.type === 'mapPicker') {
+      // Enlem/Boylam'i haritaya tiklayarak sec
+      return `<div class="flex flex-col gap-2 md:col-span-2">
+        <label class="text-xs font-semibold tracking-wide text-on-surface">${lbl(f.label)}</label>
+        <button type="button" onclick="toggleFormMap()" class="self-start inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90">
+          <span class="material-symbols-outlined text-base">location_on</span>${t('pick_on_map')}
+        </button>
+        <p id="formMapHint" class="text-xs text-secondary hidden">${t('pick_on_map_hint')}</p>
+        <div id="formMap" class="hidden w-full h-64 rounded-lg overflow-hidden border border-outline-variant"></div>
+      </div>`;
+    }
     if (f.type === 'personSelect') {
       if (item) {
         input = `<input id="f_${f.field}" type="text" value="${val}" disabled class="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg disabled:opacity-60"/>`;
@@ -941,13 +983,61 @@ async function openEdit(id) {
   el('modal').classList.remove('hidden');
 }
 
-function closeModal() { el('modal').classList.add('hidden'); }
+function closeModal() {
+  el('modal').classList.add('hidden');
+  if (formMap) { formMap.remove(); formMap = null; formMarker = null; }
+}
+
+// --- Form ici konum secici (haritadan tiklayarak Enlem/Boylam) ---
+let formMap = null, formMarker = null;
+
+function toggleFormMap() {
+  const box = el('formMap'), hint = el('formMapHint');
+  if (!box) return;
+  if (!box.classList.contains('hidden')) {          // aciksa gizle
+    box.classList.add('hidden');
+    if (hint) hint.classList.add('hidden');
+    return;
+  }
+  box.classList.remove('hidden');
+  if (hint) hint.classList.remove('hidden');
+  initFormMap();
+}
+
+function initFormMap() {
+  if (typeof L === 'undefined') return;
+  const latEl = el('f_latitude'), lngEl = el('f_longitude');
+  const lat = parseFloat(latEl && latEl.value), lng = parseFloat(lngEl && lngEl.value);
+  const hasVal = !isNaN(lat) && !isNaN(lng);
+  const center = hasVal ? [lat, lng] : [36.8948, 30.6240]; // Uncali Mezarligi
+  if (formMap) { formMap.remove(); formMap = null; formMarker = null; }
+  formMap = L.map('formMap').setView(center, hasVal ? 18 : 17);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(formMap);
+  if (hasVal) placeFormMarker(L.latLng(lat, lng));
+  formMap.on('click', (e) => placeFormMarker(e.latlng));
+  setTimeout(() => formMap && formMap.invalidateSize(), 120); // kutu yeni gorunur oldu
+}
+
+function placeFormMarker(latlng) {
+  const latEl = el('f_latitude'), lngEl = el('f_longitude');
+  if (formMarker) {
+    formMarker.setLatLng(latlng);
+  } else {
+    formMarker = L.marker(latlng, { draggable: true }).addTo(formMap);
+    formMarker.on('dragend', () => placeFormMarker(formMarker.getLatLng()));
+  }
+  if (latEl) latEl.value = latlng.lat.toFixed(6);
+  if (lngEl) lngEl.value = latlng.lng.toFixed(6);
+}
 
 async function saveRecord() {
   const cfg = ENTITIES[currentKey];
   const body = {};
   cfg.fields.forEach((f) => {
-    let v = el('f_' + f.field).value;
+    const inp = el('f_' + f.field);
+    if (!inp) return; // gorsel yardimci alan (or. mapPicker) - gonderilmez
+    let v = inp.value;
     if (v === '') { body[f.field] = null; return; }
     if (f.type === 'time' && /^\d{2}:\d{2}$/.test(v)) v += ':00'; // TimeOnly icin saniye ekle
     body[f.field] = f.type === 'number' ? parseFloat(v) : v;

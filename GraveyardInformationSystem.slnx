@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Graveyard.API/Graveyard.API.csproj" />
+  <Project Path="Graveyard.Tests/Graveyard.Tests.csproj" />
 </Solution>

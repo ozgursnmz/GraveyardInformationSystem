@@ -165,7 +165,19 @@ GraveyardInformationSystem/
 │   ├── wwwroot/             # frontend: index.html, find.html, login.html, app.js, i18n.js
 │   ├── appsettings.json     # config (secrets kept in appsettings.Development.json)
 │   └── Program.cs           # DI, JWT, static files, authorization policy
+├── Graveyard.Tests/         # xUnit unit tests (in‑memory EF Core, no SQL Server needed)
 └── README.md
+```
+
+---
+
+## Tests
+
+Unit tests cover the dashboard statistics logic and grave‑plot CRUD, using EF Core's
+in‑memory provider — so they run without a live SQL Server:
+
+```bash
+dotnet test
 ```
 
 ---
