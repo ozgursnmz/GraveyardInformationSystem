@@ -188,9 +188,15 @@ dotnet test
 
 ## Security & KVKK
 
-- Sensitive personal data (owner phone, e‑mail, national ID, payments) is **only** reachable by authenticated staff — the API enforces a default *authenticated‑user* policy.
+- Sensitive personal data (owner phone, e‑mail, national ID, payments) is **only** reachable by authenticated staff — the API enforces a default *authenticated‑user* policy; the rest is opt‑in via `[AllowAnonymous]`.
 - The single public endpoint exposes just the deceased's name and grave location.
-- Passwords are stored as **BCrypt** hashes; the JWT key and connection string are kept out of the repository.
+- Passwords are stored as **BCrypt** hashes; login uses a constant, non‑enumerating error message.
+- **Login rate limiting**: 5 attempts per minute per IP (brute‑force protection).
+- All queries are parameterised through EF Core (**no SQL injection**); table data is HTML‑escaped on render (**no stored XSS**); DB errors return a short code instead of raw SQL.
+- **HTTPS redirection** is enforced outside Development.
+- Secrets (JWT signing key, DB password) live only in `appsettings.Development.json`, which is **git‑ignored** and never committed.
+
+> **First‑time setup:** `appsettings.Development.json` is not in the repo. Copy `appsettings.json` to `appsettings.Development.json` and fill in a real DB password and a JWT `Key` of at least 32 characters.
 
 ---
 

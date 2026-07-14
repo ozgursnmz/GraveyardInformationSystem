@@ -359,6 +359,11 @@ let currentMonths = 0; // 0 = tum zamanlar
 
 const el = (id) => document.getElementById(id);
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : v);
+
+// HTML kaçışı - depolanmis (stored) XSS'e karsi. Veriyi innerHTML'e basmadan once temizler.
+const esc = (v) => (v === null || v === undefined ? '' : String(v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;'));
 const keyPath = (cfg, item) => cfg.key.map((k) => item[k]).join('/');
 
 function badgeHtml(value) {
@@ -367,7 +372,7 @@ function badgeHtml(value) {
   if (v === 'Occupied') cls = 'bg-[#f1f5f9] text-[#475569] border-outline-variant';
   else if (v === 'Reserved') cls = 'bg-primary-fixed-dim text-on-primary-fixed border-primary-fixed';
   else if (v === 'Maintenance') cls = 'bg-tertiary-fixed text-tertiary border-tertiary-fixed';
-  return `<span class="px-3 py-1 rounded-full text-xs font-semibold border ${cls}">${fmt(valueLabel(v))}</span>`;
+  return `<span class="px-3 py-1 rounded-full text-xs font-semibold border ${cls}">${esc(fmt(valueLabel(v)))}</span>`;
 }
 
 // --- Istatistik kartlari ---
@@ -743,7 +748,7 @@ function buildFilters(cfg) {
     const opts = [''].concat(vals).map((v) => {
       const label = v === '' ? t('period_all') : valueLabel(v);
       const val = ('' + v).replace(/'/g, "\\'");
-      return `<button type="button" onclick="pickFilter('${c.field}','${val}')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-container-low">${label}</button>`;
+      return `<button type="button" onclick="pickFilter('${c.field}','${val}')" class="w-full text-left px-4 py-2.5 text-sm hover:bg-surface-container-low">${esc(label)}</button>`;
     }).join('');
     return `<div class="relative">
       <button type="button" onclick="toggleFilterMenu('${c.field}')" class="flex items-center gap-2 px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-full text-sm hover:border-primary transition-colors">
@@ -810,7 +815,7 @@ function renderRows() {
     const cells = cfg.columns.map((c) => {
       const val = item[c.field];
       if (c.badge) return `<td class="py-4 px-6">${badgeHtml(val)}</td>`;
-      return `<td class="py-4 px-6">${fmt(valueLabel(val))}</td>`;
+      return `<td class="py-4 px-6">${esc(fmt(valueLabel(val)))}</td>`;
     }).join('');
 
     const kp = JSON.stringify(keyPath(cfg, item));
@@ -1101,7 +1106,7 @@ async function deleteRow(id) {
     if (res.status === 401 || res.status === 403) { toast(t('err_auth'), 'error'); return; }
     if (!res.ok) {
       const txt = await res.text();
-      toast(txt.includes('REFERENCE') || txt.includes('FOREIGN KEY') ? t('delete_fk') : t('err_generic'), 'error');
+      toast(/FK|REFERENCE|FOREIGN KEY/.test(txt) ? t('delete_fk') : t('err_generic'), 'error');
       return;
     }
     await loadEntity(currentKey);
@@ -1134,7 +1139,7 @@ async function purgeRow(id) {
     if (res.status === 401 || res.status === 403) { toast(t('err_auth'), 'error'); return; }
     if (!res.ok) {
       const txt = await res.text();
-      toast(txt.includes('REFERENCE') || txt.includes('FOREIGN KEY') ? t('delete_fk') : t('err_generic'), 'error');
+      toast(/FK|REFERENCE|FOREIGN KEY/.test(txt) ? t('delete_fk') : t('err_generic'), 'error');
       return;
     }
     await loadEntity(currentKey);
@@ -1253,7 +1258,7 @@ function confirmDialog(message) {
 
 function friendlyError(text, status) {
   const s = (text || '').toString();
-  // ASP.NET model dogrulama hatalari (400) -> alan bazli mesajlari birlestir
+  // ASP.NET model dogrulama hatalari (400) -> alan bazli mesajlari birlestir; DB kod eslesmesi
   if (status === 400) {
     try {
       const j = JSON.parse(s);
@@ -1261,6 +1266,12 @@ function friendlyError(text, status) {
         const msgs = [];
         Object.values(j.errors).forEach((arr) => (arr || []).forEach((m) => msgs.push('• ' + m)));
         if (msgs.length) return msgs.join('\n');
+      }
+      if (j && j.code) {
+        if (j.code === 'DUPLICATE') return t('err_duplicate');
+        if (j.code === 'FK') return t('err_fk');
+        if (j.code === 'CHECK') return t('err_check');
+        if (j.code === 'NULL') return t('err_null');
       }
     } catch (e) { /* JSON degil, asagi dus */ }
   }

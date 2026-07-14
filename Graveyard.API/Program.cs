@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Graveyard.API.Data;
 using Graveyard.API.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -74,9 +75,23 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// CORS (frontend baglanacak)
-builder.Services.AddCors(o =>
-    o.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+// NOT: Frontend (wwwroot) API ile AYNI kaynaktan sunuluyor; bu yuzden CORS'a gerek yok.
+// (Onceki "AllowAnyOrigin" politikasi kaldirildi - gereksiz ve fazla genisti.)
+
+// Giris denemelerine hiz siniri: kaba-kuvvet (brute force) saldirilarina karsi IP basina 5/dakika
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429; // Too Many Requests
+    options.AddPolicy("login", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window = TimeSpan.FromMinutes(1),
+                PermitLimit = 5,
+                QueueLimit = 0
+            }));
+});
 
 var app = builder.Build();
 
@@ -90,11 +105,19 @@ app.Use(async (context, next) =>
     }
     catch (DbUpdateException dbEx)
     {
+        // Ham SQL mesajini (tablo/kisit adlari) istemciye SIZDIRMA; sadece kisa bir kod dondur.
+        var inner = dbEx.InnerException?.Message ?? "";
+        string code =
+            inner.Contains("FOREIGN KEY") || inner.Contains("REFERENCE") ? "FK" :
+            inner.Contains("PRIMARY KEY") || inner.Contains("duplicate") ? "DUPLICATE" :
+            inner.Contains("CHECK constraint") ? "CHECK" :
+            inner.Contains("NULL") ? "NULL" : "DB";
         context.Response.StatusCode = 400;
         context.Response.ContentType = "application/json; charset=utf-8";
         await context.Response.WriteAsJsonAsync(new
         {
-            error = dbEx.InnerException?.Message ?? "Veritabanı işlemi başarısız.",
+            error = "Veritabanı işlemi başarısız.",
+            code,
             status = 400
         });
     }
@@ -115,6 +138,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    // Uretimde HTTP'yi HTTPS'e yonlendir (token/sifre duz metin gitmesin).
+    // Development'ta local http calismasi bozulmasin diye kapali.
+    app.UseHttpsRedirection();
+}
 
 // Statik frontend (wwwroot): acilis sayfasi = halka acik mezar sorgulama (find.html)
 var defaultFiles = new DefaultFilesOptions();
@@ -123,7 +152,7 @@ defaultFiles.DefaultFileNames.Add("find.html");
 app.UseDefaultFiles(defaultFiles);
 app.UseStaticFiles();
 
-app.UseCors("AllowAll");
+app.UseRateLimiter();      // hiz siniri (login politikasi)
 app.UseAuthentication();   // once kimlik dogrula
 app.UseAuthorization();    // sonra yetki kontrol et
 app.MapControllers();

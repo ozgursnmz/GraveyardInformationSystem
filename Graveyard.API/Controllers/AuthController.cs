@@ -5,6 +5,7 @@ using Graveyard.API.Data;
 using Graveyard.API.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -24,7 +25,9 @@ public class AuthController : ControllerBase
     }
 
     // POST: api/Auth/login  -> kullanici adi + sifre ile JWT token al (halka acik)
+    // Rate limit: IP basina dakikada 5 deneme (kaba-kuvvet korumasi)
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
     {
