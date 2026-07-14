@@ -107,7 +107,7 @@ docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Graveyard2026" \
 
 ### 2. Create the database (run scripts in order)
 ```bash
-for f in 01_schema 02_indexes 03_seed; do
+for f in 01_schema 02_indexes 03_seed 04_soft_delete; do
   docker cp database/$f.sql graveyard-sql:/tmp/
   docker exec -it graveyard-sql /opt/mssql-tools18/bin/sqlcmd \
     -S localhost -U sa -P 'Graveyard2026' -C -i /tmp/$f.sql
@@ -116,6 +116,7 @@ done
 - `01_schema.sql` — all tables + `APP_USER` + default admin
 - `02_indexes.sql` — search / filter performance indexes
 - `03_seed.sql` — ~3 years of realistic sample data
+- `04_soft_delete.sql` — archive columns for the main tables (safe on an existing DB)
 
 ### 3. Configure secrets
 Create `Graveyard.API/appsettings.Development.json` (git‑ignored):
@@ -158,7 +159,8 @@ GraveyardInformationSystem/
 ├── database/
 │   ├── 01_schema.sql        # tables + APP_USER + admin
 │   ├── 02_indexes.sql       # performance indexes
-│   └── 03_seed.sql          # realistic sample data (~3 years)
+│   ├── 03_seed.sql          # realistic sample data (~3 years)
+│   └── 04_soft_delete.sql   # archive columns (safe ALTER for existing DBs)
 ├── Graveyard.API/
 │   ├── Controllers/         # REST endpoints (CRUD + Auth + Stats + Map…)
 │   ├── Models/              # EF Core entities (Database‑First)

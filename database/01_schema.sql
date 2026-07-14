@@ -16,7 +16,9 @@ CREATE TABLE PERSON (
     DateOfBirth DATE,
     Gender NVARCHAR(10) DEFAULT 'Unknown',
     MotherName NVARCHAR(50) NULL,
-    FatherName NVARCHAR(50) NULL
+    FatherName NVARCHAR(50) NULL,
+    IsArchived BIT NOT NULL DEFAULT 0,
+    ArchivedAt DATETIME2 NULL
 );
 
 CREATE TABLE GRAVE_OWNER (
@@ -27,6 +29,8 @@ CREATE TABLE GRAVE_OWNER (
     OwnerType NVARCHAR(20) DEFAULT 'Individual',
     RegistrationDate DATE,
     Relationship NVARCHAR(50) NULL,
+    IsArchived BIT NOT NULL DEFAULT 0,
+    ArchivedAt DATETIME2 NULL,
     FOREIGN KEY (SSN) REFERENCES PERSON(SSN)
 );
 
@@ -70,6 +74,8 @@ CREATE TABLE GRAVE_PLOT (
     Status NVARCHAR(20) DEFAULT 'Available',
     ZoneID NVARCHAR(10),
     MonumentCode NVARCHAR(10),
+    IsArchived BIT NOT NULL DEFAULT 0,
+    ArchivedAt DATETIME2 NULL,
     FOREIGN KEY (ZoneID) REFERENCES CEMETERY_ZONE(ZoneID),
     FOREIGN KEY (MonumentCode) REFERENCES MONUMENT_TYPE(MonumentCode)
 );
@@ -93,6 +99,8 @@ CREATE TABLE DECEASED_PERSON (
     PlotNumber NVARCHAR(15) UNIQUE,
     PermitNumber NVARCHAR(15) UNIQUE,
     BurialDate DATE NULL,
+    IsArchived BIT NOT NULL DEFAULT 0,
+    ArchivedAt DATETIME2 NULL,
     FOREIGN KEY (SSN) REFERENCES PERSON(SSN),
     FOREIGN KEY (PlotNumber) REFERENCES GRAVE_PLOT(PlotNumber),
     FOREIGN KEY (PermitNumber) REFERENCES BURIAL_PERMIT(PermitNumber)

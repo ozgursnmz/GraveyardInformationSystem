@@ -33,10 +33,29 @@ public class BurialRecordsController : ControllerBase
             d.PermitNumber
         ));
 
-    // GET: api/BurialRecords  -> tum defin kayitlari (zengin, birlesik)
+    // GET: api/BurialRecords?archived=false  -> defin kayitlari (varsayilan: aktif)
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<BurialRecordDto>>> GetAll()
-        => await BaseQuery().ToListAsync();
+    public async Task<ActionResult<IEnumerable<BurialRecordDto>>> GetAll(bool archived = false)
+        => await _context.DeceasedPeople
+            .Where(d => d.IsArchived == archived)
+            .Select(d => new BurialRecordDto(
+                d.Ssn,
+                d.SsnNavigation.FirstName + " " + d.SsnNavigation.LastName,
+                d.SsnNavigation.DateOfBirth,
+                d.DateOfDeath,
+                d.CauseOfDeath,
+                d.Religion,
+                d.PlotNumber,
+                d.PlotNumberNavigation!.Status,
+                d.PlotNumberNavigation.Zone!.Name,
+                d.PlotNumberNavigation.MonumentCodeNavigation!.Material + " " +
+                    d.PlotNumberNavigation.MonumentCodeNavigation.Style,
+                d.PlotNumberNavigation.Reservation!.OwnerSsnNavigation!.SsnNavigation.FirstName + " " +
+                    d.PlotNumberNavigation.Reservation.OwnerSsnNavigation.SsnNavigation.LastName,
+                d.PlotNumberNavigation.Reservation.OwnerSsnNavigation.PhoneNumber,
+                d.PlotNumberNavigation.Reservation.OwnerSsnNavigation.Email,
+                d.PermitNumber))
+            .ToListAsync();
 
     // GET: api/BurialRecords/10000000001  -> tek defin kaydi
     [HttpGet("{ssn}")]

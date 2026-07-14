@@ -68,9 +68,10 @@ public class GravePlotsControllerTests
         Assert.All(list, p => Assert.Equal("Available", p.Status));
     }
 
-    // DELETE var olan parseli siler, sonrasinda veritabaninda bulunmaz.
+    // DELETE artik kalici silmez, arsivler (soft delete): satir kalir, IsArchived=1 olur
+    // ve varsayilan (aktif) listede gorunmez.
     [Fact]
-    public async Task Delete_RemovesPlot()
+    public async Task Delete_ArchivesPlotInsteadOfRemoving()
     {
         using var db = TestDb.Create();
         db.GravePlots.Add(new GravePlot { PlotNumber = "P1", Status = "Available" });
@@ -79,6 +80,33 @@ public class GravePlotsControllerTests
         var result = await new GravePlotsController(db).Delete("P1");
 
         Assert.IsType<NoContentResult>(result);
-        Assert.False(await db.GravePlots.AnyAsync(p => p.PlotNumber == "P1"));
+        var row = await db.GravePlots.FindAsync("P1");
+        Assert.NotNull(row);                 // satir hala var
+        Assert.True(row!.IsArchived);        // ama arsivlendi
+        Assert.NotNull(row.ArchivedAt);
+
+        // Aktif liste (archived=false) artik bu parseli dondurmez
+        var active = (await new GravePlotsController(db).GetAll(false)).Value!;
+        Assert.DoesNotContain(active, p => p.PlotNumber == "P1");
+
+        // Arsiv listesi (archived=true) dondurur
+        var archived = (await new GravePlotsController(db).GetAll(true)).Value!;
+        Assert.Contains(archived, p => p.PlotNumber == "P1");
+    }
+
+    // Restore arsivlenmis parseli aktif hale geri getirir.
+    [Fact]
+    public async Task Restore_UnarchivesPlot()
+    {
+        using var db = TestDb.Create();
+        db.GravePlots.Add(new GravePlot { PlotNumber = "P1", Status = "Available", IsArchived = true, ArchivedAt = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+
+        var result = await new GravePlotsController(db).Restore("P1");
+
+        Assert.IsType<NoContentResult>(result);
+        var row = await db.GravePlots.FindAsync("P1");
+        Assert.False(row!.IsArchived);
+        Assert.Null(row.ArchivedAt);
     }
 }

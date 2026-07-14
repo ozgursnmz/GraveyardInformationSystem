@@ -59,7 +59,7 @@ const lbl = (o) => (o && (o[LANG] || o.tr)) || '';
 // label: i18n anahtari | key: birincil anahtar alan(lar)i | readOnly: sadece okuma
 const ENTITIES = {
   people: {
-    label: 'nav_people', endpoint: 'People', key: ['ssn'],
+    label: 'nav_people', endpoint: 'People', key: ['ssn'], archivable: true,
     columns: [
       { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' } },
       { field: 'firstName', label: { tr: 'Ad', en: 'First Name' } },
@@ -80,7 +80,7 @@ const ENTITIES = {
     ],
   },
   gravePlots: {
-    label: 'nav_gravePlots', endpoint: 'GravePlots', key: ['plotNumber'],
+    label: 'nav_gravePlots', endpoint: 'GravePlots', key: ['plotNumber'], archivable: true,
     columns: [
       { field: 'plotNumber', label: { tr: 'Parsel No', en: 'Plot No' } },
       { field: 'zoneId', label: { tr: 'Bölge', en: 'Zone' }, filter: true },
@@ -101,7 +101,7 @@ const ENTITIES = {
     ],
   },
   burialRecords: {
-    label: 'nav_burialRecords', endpoint: 'BurialRecords', writeEndpoint: 'DeceasedPeople', key: ['ssn'],
+    label: 'nav_burialRecords', endpoint: 'BurialRecords', writeEndpoint: 'DeceasedPeople', key: ['ssn'], archivable: true,
     columns: [
       { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' } },
       { field: 'deceasedName', label: { tr: 'İsim Soyisim', en: 'Full Name' } },
@@ -130,7 +130,7 @@ const ENTITIES = {
     ],
   },
   graveOwners: {
-    label: 'nav_graveOwners', endpoint: 'GraveOwners', key: ['ssn'],
+    label: 'nav_graveOwners', endpoint: 'GraveOwners', key: ['ssn'], archivable: true,
     columns: [
       { field: 'ssn', label: { tr: 'TC / SSN', en: 'SSN' } },
       { field: 'ownerType', label: { tr: 'Tür', en: 'Type' }, badge: true, filter: true },
@@ -354,6 +354,7 @@ let currentView = 'home';
 let currentData = [];
 let currentPage = 1;
 let activeFilters = {};
+let showArchived = false; // arsivlenmis kayitlar goruntuleniyor mu
 let currentMonths = 0; // 0 = tum zamanlar
 
 const el = (id) => document.getElementById(id);
@@ -671,9 +672,20 @@ async function showCalendar() {
 
 // --- Tablo gorunumu ---
 async function loadEntity(entityKey) {
+  const switching = entityKey !== currentKey;
   currentKey = entityKey;
   currentView = entityKey;
   const cfg = ENTITIES[entityKey];
+  if (switching) showArchived = false; // baska tabloya gecince arsiv gorunumu sifirlanir
+
+  // Arsiv gorunumu geçis butonu (sadece arsivlenebilir tablolarda)
+  const arcBtn = el('btnArchiveToggle');
+  if (arcBtn) {
+    arcBtn.style.display = cfg.archivable ? 'flex' : 'none';
+    el('archiveToggleLabel').textContent = showArchived ? t('show_active') : t('show_archived');
+    arcBtn.classList.toggle('bg-primary', showArchived);
+    arcBtn.classList.toggle('text-on-primary', showArchived);
+  }
 
   el('homeView').classList.add('hidden');
   el('mapView').classList.add('hidden');
@@ -694,7 +706,8 @@ async function loadEntity(entityKey) {
   el('tableBody').innerHTML = `<tr><td class="py-8 px-6 text-center text-secondary" colspan="99">${t('loading')}</td></tr>`;
 
   try {
-    const res = await fetch('/api/' + cfg.endpoint, { headers: authHeaders() });
+    const url = '/api/' + cfg.endpoint + (cfg.archivable ? '?archived=' + showArchived : '');
+    const res = await fetch(url, { headers: authHeaders() });
     currentData = await res.json();
     currentPage = 1;
     buildFilters(cfg);
@@ -709,6 +722,12 @@ const PAGE_SIZE = 20;
 function changePage(delta) {
   currentPage += delta;
   renderRows();
+}
+
+// Aktif <-> arsiv gorunumu arasinda gecis
+function toggleArchivedView() {
+  showArchived = !showArchived;
+  loadEntity(currentKey); // ayni tablo: showArchived korunur
 }
 
 // Filtrelenebilir sutunlar icin ozel acilir menuler (siteyle uyumlu)
@@ -798,12 +817,19 @@ function renderRows() {
     const extra = cfg.rowAction
       ? `<button onclick='${cfg.rowAction.fn}(${kp})' class="p-2 text-secondary hover:text-primary rounded-full hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">${cfg.rowAction.icon}</span></button>`
       : '';
+    const archivedView = cfg.archivable && showArchived;
+    const editBtn = archivedView ? '' :
+      `<button onclick='openEdit(${kp})' class="p-2 text-secondary hover:text-primary rounded-full hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">edit</span></button>`;
+    const removeBtn = archivedView
+      ? `<button onclick='restoreRow(${kp})' title="${t('restore')}" class="p-2 text-secondary hover:text-primary rounded-full hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">restore_from_trash</span></button>
+         <button onclick='purgeRow(${kp})' title="${t('purge')}" class="p-2 text-secondary hover:text-error rounded-full hover:bg-error-container"><span class="material-symbols-outlined text-[20px]">delete_forever</span></button>`
+      : `<button onclick='deleteRow(${kp})' title="${cfg.archivable ? t('archive') : ''}" class="p-2 text-secondary hover:text-error rounded-full hover:bg-error-container"><span class="material-symbols-outlined text-[20px]">${cfg.archivable ? 'archive' : 'delete'}</span></button>`;
     const actions = cfg.readOnly ? '' : `
       <td class="py-4 px-6 text-right">
         <div class="flex justify-end gap-2">
           ${extra}
-          <button onclick='openEdit(${kp})' class="p-2 text-secondary hover:text-primary rounded-full hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">edit</span></button>
-          <button onclick='deleteRow(${kp})' class="p-2 text-secondary hover:text-error rounded-full hover:bg-error-container"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+          ${editBtn}
+          ${removeBtn}
         </div>
       </td>`;
 
@@ -1067,9 +1093,44 @@ async function saveRecord() {
 
 async function deleteRow(id) {
   const cfg = ENTITIES[currentKey];
-  if (!(await confirmDialog(t('confirm_delete')))) return;
+  // Arsivlenebilir tablolarda "sil" aslinda arsivler; mesajlar buna gore
+  const archive = !!cfg.archivable;
+  if (!(await confirmDialog(archive ? t('confirm_archive') : t('confirm_delete')))) return;
   try {
     const res = await fetch('/api/' + (cfg.writeEndpoint || cfg.endpoint) + '/' + id, { method: 'DELETE', headers: authHeaders() });
+    if (res.status === 401 || res.status === 403) { toast(t('err_auth'), 'error'); return; }
+    if (!res.ok) {
+      const txt = await res.text();
+      toast(txt.includes('REFERENCE') || txt.includes('FOREIGN KEY') ? t('delete_fk') : t('err_generic'), 'error');
+      return;
+    }
+    await loadEntity(currentKey);
+    await loadStats();
+    toast(archive ? t('toast_archived') : t('toast_deleted'));
+  } catch (e) { toast(t('err_generic'), 'error'); }
+}
+
+// Arsivden geri getir (restore)
+async function restoreRow(id) {
+  const cfg = ENTITIES[currentKey];
+  try {
+    const res = await fetch('/api/' + (cfg.writeEndpoint || cfg.endpoint) + '/' + id + '/restore',
+      { method: 'POST', headers: authHeaders() });
+    if (res.status === 401 || res.status === 403) { toast(t('err_auth'), 'error'); return; }
+    if (!res.ok) { toast(t('err_generic'), 'error'); return; }
+    await loadEntity(currentKey);
+    await loadStats();
+    toast(t('toast_restored'));
+  } catch (e) { toast(t('err_generic'), 'error'); }
+}
+
+// Arsivdeki kaydi KALICI sil (geri alinamaz)
+async function purgeRow(id) {
+  const cfg = ENTITIES[currentKey];
+  if (!(await confirmDialog(t('confirm_purge')))) return;
+  try {
+    const res = await fetch('/api/' + (cfg.writeEndpoint || cfg.endpoint) + '/' + id + '/permanent',
+      { method: 'DELETE', headers: authHeaders() });
     if (res.status === 401 || res.status === 403) { toast(t('err_auth'), 'error'); return; }
     if (!res.ok) {
       const txt = await res.text();

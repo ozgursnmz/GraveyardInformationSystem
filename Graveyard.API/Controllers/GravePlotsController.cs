@@ -16,8 +16,8 @@ public class GravePlotsController : ControllerBase
 
     // GET: api/GravePlots  -> tum mezar yerleri
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<GravePlot>>> GetAll()
-        => await _context.GravePlots.ToListAsync();
+    public async Task<ActionResult<IEnumerable<GravePlot>>> GetAll(bool archived = false)
+        => await _context.GravePlots.Where(p => p.IsArchived == archived).ToListAsync();
 
     // GET: api/GravePlots/PLT001  -> tek mezar yeri
     [HttpGet("{id}")]
@@ -49,7 +49,7 @@ public class GravePlotsController : ControllerBase
     public async Task<ActionResult<IEnumerable<MapPlotDto>>> Map()
     {
         return await _context.GravePlots
-            .Where(p => p.Latitude != null && p.Longitude != null)
+            .Where(p => p.Latitude != null && p.Longitude != null && !p.IsArchived)
             .Select(p => new MapPlotDto(
                 p.PlotNumber, p.Latitude, p.Longitude, p.Status,
                 p.Zone!.Name,
@@ -91,13 +91,40 @@ public class GravePlotsController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/GravePlots/PLT001  -> sil
+    // DELETE: api/GravePlots/PLT001  -> kalici silmez, arsivler (soft delete)
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
         var plot = await _context.GravePlots.FindAsync(id);
         if (plot == null) return NotFound();
+        plot.IsArchived = true;
+        plot.ArchivedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // POST: api/GravePlots/PLT001/restore  -> arsivden geri getir
+    [Authorize(Roles = "Admin")]
+    [HttpPost("{id}/restore")]
+    public async Task<IActionResult> Restore(string id)
+    {
+        var plot = await _context.GravePlots.FindAsync(id);
+        if (plot == null) return NotFound();
+        plot.IsArchived = false;
+        plot.ArchivedAt = null;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // DELETE: api/GravePlots/PLT001/permanent  -> KALICI sil (yalnizca arsivdeki kayit)
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id}/permanent")]
+    public async Task<IActionResult> PurgePermanent(string id)
+    {
+        var plot = await _context.GravePlots.FindAsync(id);
+        if (plot == null) return NotFound();
+        if (!plot.IsArchived) return BadRequest("Sadece arşivdeki kayıtlar kalıcı silinebilir.");
         _context.GravePlots.Remove(plot);
         await _context.SaveChangesAsync();
         return NoContent();

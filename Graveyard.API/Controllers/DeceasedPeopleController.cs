@@ -21,7 +21,7 @@ public class DeceasedPeopleController : ControllerBase
     [HttpGet("recent")]
     public async Task<ActionResult<IEnumerable<RecentDeathDto>>> Recent()
         => await _context.DeceasedPeople
-            .Where(d => d.DateOfDeath != null)
+            .Where(d => d.DateOfDeath != null && !d.IsArchived)
             .OrderByDescending(d => d.DateOfDeath)
             .Take(12)
             .Select(d => new RecentDeathDto(
@@ -117,22 +117,49 @@ public class DeceasedPeopleController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/DeceasedPeople/full/{ssn} -> vefat kaydini sil (kisi kalir)
+    // DELETE: api/DeceasedPeople/full/{ssn} -> vefat kaydini arsivler (kalici silmez, kisi kalir)
     [Authorize(Roles = "Admin")]
     [HttpDelete("full/{ssn}")]
     public async Task<IActionResult> DeleteFull(string ssn)
     {
         var dec = await _context.DeceasedPeople.FindAsync(ssn);
         if (dec == null) return NotFound();
+        dec.IsArchived = true;
+        dec.ArchivedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // POST: api/DeceasedPeople/full/{ssn}/restore -> arsivden geri getir
+    [Authorize(Roles = "Admin")]
+    [HttpPost("full/{ssn}/restore")]
+    public async Task<IActionResult> RestoreFull(string ssn)
+    {
+        var dec = await _context.DeceasedPeople.FindAsync(ssn);
+        if (dec == null) return NotFound();
+        dec.IsArchived = false;
+        dec.ArchivedAt = null;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // DELETE: api/DeceasedPeople/full/{ssn}/permanent -> vefat kaydini KALICI sil (kisi kalir)
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("full/{ssn}/permanent")]
+    public async Task<IActionResult> PurgeFull(string ssn)
+    {
+        var dec = await _context.DeceasedPeople.FindAsync(ssn);
+        if (dec == null) return NotFound();
+        if (!dec.IsArchived) return BadRequest("Sadece arşivdeki kayıtlar kalıcı silinebilir.");
         _context.DeceasedPeople.Remove(dec);
         await _context.SaveChangesAsync();
         return NoContent();
     }
 
-    // GET: api/DeceasedPeople
+    // GET: api/DeceasedPeople?archived=false  -> varsayilan: aktif kayitlar
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<DeceasedPerson>>> GetAll()
-        => await _context.DeceasedPeople.ToListAsync();
+    public async Task<ActionResult<IEnumerable<DeceasedPerson>>> GetAll(bool archived = false)
+        => await _context.DeceasedPeople.Where(d => d.IsArchived == archived).ToListAsync();
 
     // GET: api/DeceasedPeople/{id}
     [HttpGet("{id}")]
@@ -186,14 +213,15 @@ public class DeceasedPeopleController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/DeceasedPeople/{id}
+    // DELETE: api/DeceasedPeople/{id}  -> kalici silmez, arsivler (soft delete)
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
         var item = await _context.DeceasedPeople.FindAsync(id);
         if (item == null) return NotFound();
-        _context.DeceasedPeople.Remove(item);
+        item.IsArchived = true;
+        item.ArchivedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         return NoContent();
     }

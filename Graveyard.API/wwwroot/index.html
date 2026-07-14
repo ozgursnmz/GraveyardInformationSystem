@@ -256,6 +256,9 @@
         <div class="p-4 border-b border-outline-variant flex flex-wrap gap-3 items-center bg-surface-bright">
           <h3 id="tableTitle" class="text-lg font-semibold mr-2">Kayıtlar</h3>
           <div id="tableFilters" class="flex flex-wrap gap-2 items-center"></div>
+          <button id="btnArchiveToggle" onclick="toggleArchivedView()" style="display:none" class="ml-auto flex items-center gap-2 px-4 py-2 bg-surface-container-low text-on-surface-variant rounded-lg border border-outline-variant hover:bg-surface-container-high transition-colors text-sm font-semibold">
+            <span class="material-symbols-outlined text-[18px]">inventory_2</span><span id="archiveToggleLabel">Arşivi Göster</span>
+          </button>
           <button onclick="exportExcel()" class="ml-auto flex items-center gap-2 px-4 py-2 bg-surface-container-low text-on-surface-variant rounded-lg border border-outline-variant hover:bg-surface-container-high transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-[18px]">download</span><span data-i18n="excel_export">Excel'e Aktar</span>
           </button>
