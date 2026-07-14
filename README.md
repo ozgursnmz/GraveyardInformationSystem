@@ -1,5 +1,7 @@
 # Graveyard Information System
 
+[![CI](https://github.com/ozgursnmz/GraveyardInformationSystem/actions/workflows/ci.yml/badge.svg)](https://github.com/ozgursnmz/GraveyardInformationSystem/actions/workflows/ci.yml)
+
 A full‑stack **cemetery management system**: a secure **.NET 10 Web API** over a relational **Microsoft SQL Server** database, with a responsive **admin dashboard** and a **public grave‑finder** for citizens.
 
 The system digitises the entire lifecycle of a municipal cemetery — plots, deceased records, ownership, reservations, payments, funerals, maintenance and visitors — behind a role‑based, KVKK‑aware API, and lets families locate a loved one from their phone.

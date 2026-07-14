@@ -1154,6 +1154,7 @@ function downloadReceipt(id) {
 
 function showModalError(msg) {
   const box = el('modalError');
+  box.style.whiteSpace = 'pre-line'; // cok satirli dogrulama mesajlari icin
   box.textContent = msg;
   box.classList.remove('hidden');
 }
@@ -1191,6 +1192,17 @@ function confirmDialog(message) {
 
 function friendlyError(text, status) {
   const s = (text || '').toString();
+  // ASP.NET model dogrulama hatalari (400) -> alan bazli mesajlari birlestir
+  if (status === 400) {
+    try {
+      const j = JSON.parse(s);
+      if (j && j.errors) {
+        const msgs = [];
+        Object.values(j.errors).forEach((arr) => (arr || []).forEach((m) => msgs.push('• ' + m)));
+        if (msgs.length) return msgs.join('\n');
+      }
+    } catch (e) { /* JSON degil, asagi dus */ }
+  }
   if (s.includes('PRIMARY KEY') || s.includes('duplicate key')) return t('err_duplicate');
   if (s.includes('FOREIGN KEY') || s.includes('REFERENCE')) return t('err_fk');
   if (s.includes('CHECK constraint')) return t('err_check');
