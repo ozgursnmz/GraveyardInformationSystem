@@ -434,3 +434,4 @@ FodyWeavers.xsd
 # Local secrets (gizli ayarlar)
 appsettings.Development.json
 **/appsettings.Development.json
+TEKNOLOJI_REHBERI.md

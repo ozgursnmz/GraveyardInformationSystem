@@ -25,7 +25,7 @@ public class AuthController : ControllerBase
     }
 
     // POST: api/Auth/login  -> kullanici adi + sifre ile JWT token al (halka acik)
-    // Rate limit: IP basina dakikada 5 deneme (kaba-kuvvet korumasi)
+    // Rate limit: 5
     [AllowAnonymous]
     [EnableRateLimiting("login")]
     [HttpPost("login")]
